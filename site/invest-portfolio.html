@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Build Your Portfolio</title>
+  <link rel="stylesheet" href="./ttu-dark.css"/>
+</head>
+<body>
+<header class="header"><div class="container navbar"><a class="btn back" href="./home.html">← Back</a><h1 style="margin:0">Invest Your $100</h1></div></header>
+<main class="container">
+  <section class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <label class="label" for="section">Section</label>
+      <select id="section" style="padding:8px;border:1px solid #333;border-radius:10px"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+      <label class="label" for="semester">Semester</label>
+      <select id="semester" style="padding:8px;border:1px solid #333;border-radius:10px"><option>FALL</option><option>SPRING</option></select>
+      <a class="btn" href="./stocks.html" target="_blank">View Stock Info</a>
+    </div>
+    <div id="budget" class="notice">Budget remaining: $100.00 • Picks: 0/5</div>
+    <div id="stocks" class="grid two"></div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <button id="submit" class="btn primary" disabled>Submit Portfolio</button>
+      <a class="btn" href="./dashboard-portfolio.html">Open Dashboard</a>
+    </div>
+    <p id="msg" class="footer"></p>
+  </section>
+</main>
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
+const BUDGET = 100;
+const uid = localStorage.getItem('ie2324_uid') || (function(){const v='uid_'+Math.random().toString(36).slice(2); localStorage.setItem('ie2324_uid',v); return v;})();
+
+const q = new URL(location.href).searchParams; ['section','semester'].forEach(k=>{ const v=q.get(k); if(v) setTimeout(()=>{ document.getElementById(k).value=v.toUpperCase(); },0); });
+
+let stocks=[]; let prices={};
+fetch('./stocks.json').then(r=>r.json()).then(list=>{ stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price])); renderStocks(); updateBudget(); });
+
+function renderStocks(){
+  const root=document.getElementById('stocks'); root.innerHTML='';
+  stocks.forEach(s=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML=`<h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)}/share</span></h2>
+    <p>${s.desc||''}</p>
+    <label class='label'>Shares</label>
+    <input type='number' min='0' step='1' value='0' data-id='${s.id}' style='width:120px;padding:8px;border:1px solid #333;border-radius:10px'>`;
+    el.querySelector('input').addEventListener('input', updateBudget);
+    root.appendChild(el);
+  });
+}
+
+function updateBudget(){
+  const inputs=[...document.querySelectorAll('input[data-id]')];
+  let spent=0; let picks=0; inputs.forEach(inp=>{ const id=inp.dataset.id; const sh=Number(inp.value||0); if(sh>0){ picks++; spent+=sh*prices[id]; }});
+  const remain = BUDGET - spent; const over = remain< -1e-6; const tooMany = picks>5;
+  const b = document.getElementById('budget');
+  b.textContent = `Budget remaining: $${remain.toFixed(2)} • Picks: ${picks}/5`;
+  b.style.borderColor = (over||tooMany)?'#ff3b30':'#23262d';
+  document.getElementById('submit').disabled = over || tooMany || picks===0;
+}
+
+document.getElementById('submit').onclick = async ()=>{
+  const section = document.getElementById('section').value.toUpperCase();
+  const semester = document.getElementById('semester').value.toUpperCase();
+  const inputs=[...document.querySelectorAll('input[data-id]')];
+  let spent=0; let allocations=[]; inputs.forEach(inp=>{ const id=inp.dataset.id; const sh=Number(inp.value||0); if(sh>0){ spent+=sh*prices[id]; allocations.push({stockId:id, shares:sh, price:prices[id]}); }});
+  if(allocations.length>5){ alert('Choose at most 5 stocks.'); return; }
+  if(spent> BUDGET + 1e-6){ alert('Over budget. Reduce shares.'); return; }
+  const cash = Math.max(0, BUDGET - spent);
+  try{
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ semester, section, uid, allocations, cash })});
+    const j = await res.json();
+    document.getElementById('msg').textContent = j.ok? 'Portfolio submitted! Open the Dashboard to see progress.' : 'Error: '+j.error;
+  }catch(e){ document.getElementById('msg').textContent = 'Network error. Try again.'; }
+};
+</script>
+</body>
+</html>

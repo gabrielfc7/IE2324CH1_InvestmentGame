@@ -1,0 +1,39 @@
+[
+  {
+    "month": "Jan",
+    "factors": {
+      "TUTOR": 1.05,
+      "COFFEE": 1.05,
+      "RECYCLE": 1.1
+    }
+  },
+  {
+    "month": "Feb",
+    "factors": {
+      "LAWN": 1.2,
+      "RIDESH": 1.05
+    }
+  },
+  {
+    "month": "Mar",
+    "factors": {
+      "PRINT": 1.2,
+      "TUTOR": 1.3
+    }
+  },
+  {
+    "month": "Apr",
+    "factors": {
+      "SNACK": 1.2,
+      "TSHIRT": 1.25,
+      "MEDIA": 1.15
+    }
+  },
+  {
+    "month": "May",
+    "factors": {
+      "TUTOR": 1.5,
+      "COFFEE": 1.15
+    }
+  }
+]

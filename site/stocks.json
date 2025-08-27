@@ -1,0 +1,72 @@
+[
+  {
+    "id": "SNACK",
+    "name": "Raider Snack Stand @ Jones AT&T",
+    "price": 10,
+    "sector": "Stadium",
+    "desc": "Concessions during home games; demand spikes on sold\u2011out days."
+  },
+  {
+    "id": "LAWN",
+    "name": "Matador Lawn Care",
+    "price": 20,
+    "sector": "Services",
+    "desc": "Mowers, fuel, and weather risk; steady residential demand."
+  },
+  {
+    "id": "TSHIRT",
+    "name": "Custom TTU Shirts Pop\u2011Up",
+    "price": 15,
+    "sector": "Merch",
+    "desc": "Inventory and licensing fees matter; big game weekends help."
+  },
+  {
+    "id": "TUTOR",
+    "name": "Tech Tutoring (Math/Stats/Excel)",
+    "price": 25,
+    "sector": "Education",
+    "desc": "Capacity constrained, demand peaks near midterms and finals."
+  },
+  {
+    "id": "VRBOOTH",
+    "name": "VR \u2018Guns Up!\u2019 Photo Booth",
+    "price": 12,
+    "sector": "Entertainment",
+    "desc": "Buzz\u2011dependent; thrives on campus events and influencer visits."
+  },
+  {
+    "id": "COFFEE",
+    "name": "Library Coffee Cart",
+    "price": 8,
+    "sector": "Food",
+    "desc": "Stable weekday flow; stronger during study weeks."
+  },
+  {
+    "id": "RIDESH",
+    "name": "Late\u2011Night Ride Share",
+    "price": 18,
+    "sector": "Transit",
+    "desc": "Weekend heavy; weather boosts demand when walking is unpleasant."
+  },
+  {
+    "id": "PRINT",
+    "name": "Makerspace 3D\u2011Print Shop",
+    "price": 22,
+    "sector": "Makerspace",
+    "desc": "Project\u2011driven; peaks before design class deadlines."
+  },
+  {
+    "id": "RECYCLE",
+    "name": "Dorm Recycling Pickup",
+    "price": 9,
+    "sector": "Sustainability",
+    "desc": "Subscription\u2011like; grows with outreach."
+  },
+  {
+    "id": "MEDIA",
+    "name": "TTU Social Media Clips",
+    "price": 5,
+    "sector": "Media",
+    "desc": "Low ticket price, viral upside on special events."
+  }
+]

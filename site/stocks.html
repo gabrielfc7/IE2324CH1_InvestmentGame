@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Stocks — IE2324</title>
+  <link rel="stylesheet" href="./ttu-dark.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="container navbar">
+      <a class="btn back" href="./home.html">← Back</a>
+      <span class="footer">Tip: open this first for 2 minutes so students can scan.</span>
+    </div>
+  </header>
+  <main class="container grid two" id="list"></main>
+  <script>
+    Promise.all([
+      fetch('./stocks.json').then(r=>r.json()),
+      fetch('./data/historical.json').then(r=>r.json())
+    ]).then(([stocks,hist])=>{
+      const root=document.getElementById('list');
+      stocks.forEach(s=>{
+        const el=document.createElement('section'); el.className='card';
+        el.innerHTML = `<h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)} / share</span></h2><p>${s.desc||''}</p><canvas class='spark' id='sp_${s.id}'></canvas>`;
+        root.appendChild(el);
+        const ctx=document.getElementById('sp_'+s.id).getContext('2d');
+        const series=hist[s.id]||{}; 
+        const keys=Object.keys(series).slice(-2);
+        new Chart(ctx,{type:'line',
+          data:{labels:keys.length?['M1','M2','M3','M4','M5']:[],
+          datasets:keys.map(k=>({label:k,data:series[k],fill:false,pointRadius:0,borderWidth:2}))},
+          options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},elements:{line:{tension:.3}},responsive:true,animation:false}
+        });
+      });
+    });
+  </script>
+</body>
+</html>

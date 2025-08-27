@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Portfolio Dashboard — IE2324</title>
+  <link rel="stylesheet" href="./ttu-dark.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header class="header"><div class="container navbar"><a class="btn back" href="./home.html">← Back</a><h1 style="margin:0">Dashboard</h1></div></header>
+<main class="container">
+  <section class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <label class="label" for="semester">Semester</label>
+    <select id="semester"><option>FALL</option><option>SPRING</option></select>
+    <label class="label" for="section">Section</label>
+    <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+    <button class="btn" id="loadPreset">Load Preset</button>
+    <button class="btn ghost" id="applyTimeline">Apply Timeline</button>
+    <button class="btn ghost" id="randomTimeline">Randomize Events</button>
+    <a class="btn ghost" href="./stocks.html" target="_blank">Stock Info</a>
+  </section>
+
+  <section class="card">
+    <h2>Class Holdings by Stock</h2>
+    <canvas id="holdingsChart" height="120"></canvas>
+    <p id="submissionsTotal" class="footer"></p>
+  </section>
+
+  <section class="card">
+    <h2>Price Path (5 months)</h2>
+    <canvas id="priceChart" height="120"></canvas>
+    <p class="footer">Multipliers apply month by month based on the timeline.</p>
+  </section>
+
+  <section class="card">
+    <h2>Top 10 Leaderboard</h2>
+    <ol id="leaders"></ol>
+  </section>
+
+  <section class="card">
+    <h2>Timeline Editor</h2>
+    <div id="timeline" class="grid two"></div>
+  </section>
+</main>
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
+let stocks=[], prices={};
+fetch('./stocks.json').then(r=>r.json()).then(list=>{ stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price])); init(); });
+
+const FALL_MONTHS=['Aug','Sep','Oct','Nov','Dec'];
+const SPRING_MONTHS=['Jan','Feb','Mar','Apr','May'];
+let months = FALL_MONTHS;
+let timeline = [];
+
+function emptyTimeline(){ return months.map(m=>({month:m, factors:{}})); }
+
+function init(){
+  buildTimelineUI();
+  document.getElementById('loadPreset').onclick = loadPreset;
+  document.getElementById('applyTimeline').onclick = refreshAll;
+  document.getElementById('randomTimeline').onclick = ()=>{ randomizeTimeline(); refreshAll(); };
+  document.getElementById('section').onchange = refreshAll;
+  document.getElementById('semester').onchange = onSemesterChange;
+  onSemesterChange();
+}
+
+function onSemesterChange(){
+  const sem=document.getElementById('semester').value.toUpperCase();
+  months = sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS;
+  timeline = emptyTimeline();
+  buildTimelineUI();
+  refreshAll();
+}
+
+async function loadPreset(){
+  const sem=document.getElementById('semester').value.toUpperCase();
+  const url = sem==='SPRING'? './data/presets/spring.json' : './data/presets/fall.json';
+  timeline = await fetch(url).then(r=>r.json());
+  buildTimelineUI();
+  refreshAll();
+}
+
+function randomizeTimeline(){
+  timeline = emptyTimeline();
+  stocks.forEach(s=>{ timeline.forEach(t=>{ t.factors[s.id] = +(0.8 + Math.random()*0.8).toFixed(2); }); });
+}
+
+function buildTimelineUI(){
+  const root=document.getElementById('timeline'); root.innerHTML='';
+  timeline = timeline.length? timeline : emptyTimeline();
+  timeline.forEach((t,i)=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML=`<h3>${t.month}</h3>`;
+    const box=document.createElement('div'); box.className='grid two';
+    stocks.forEach(s=>{
+      const w=document.createElement('div');
+      w.innerHTML=`<label class='label'>${s.name}</label><input type='number' step='0.1' value='${(t.factors[s.id]||1).toFixed(1)}' data-month='${i}' data-id='${s.id}' style='width:120px;padding:8px;border:1px solid #333;border-radius:10px'>`;
+      box.appendChild(w);
+    });
+    el.appendChild(box); root.appendChild(el);
+  });
+  root.addEventListener('input', e=>{
+    const id=e.target.getAttribute('data-id'); const mi=Number(e.target.getAttribute('data-month'));
+    const v=Math.max(0, Number(e.target.value||1));
+    timeline[mi].factors[id]=v;
+  });
+}
+
+const holdingsChart = new Chart(document.getElementById('holdingsChart').getContext('2d'),{type:'bar', data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]}, options:{responsive:true,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+const priceChart = new Chart(document.getElementById('priceChart').getContext('2d'),{type:'line',data:{labels:[],datasets:[]},options:{responsive:true,animation:false}});
+
+async function refreshAll(){
+  const sem=document.getElementById('semester').value.toUpperCase();
+  const section=document.getElementById('section').value.toUpperCase();
+  await refreshHoldings(sem, section);
+  await refreshLeaderboard(sem, section);
+  refreshPriceChart();
+}
+
+async function refreshHoldings(semester, section){
+  const url = `${SCRIPT_URL}?mode=tally&semester=${encodeURIComponent(semester)}&section=${encodeURIComponent(section)}`;
+  const j = await fetch(url).then(r=>r.json());
+  document.getElementById('submissionsTotal').textContent = `${j.total||0} portfolios submitted`;
+  const labels = stocks.map(s=>s.name);
+  const data = stocks.map(s=> (j.tally && j.tally[s.id] ? j.tally[s.id].invested : 0));
+  holdingsChart.data.labels = labels; holdingsChart.data.datasets[0].data = data; holdingsChart.update();
+}
+
+function computePricePath(stockId, base){
+  const arr=[]; let p=base;
+  for(let i=0;i<months.length;i++){ const f = (timeline[i] && timeline[i].factors[stockId]) || 1; p = (i===0? base : p) * f; arr.push(p); }
+  return arr;
+}
+
+function refreshPriceChart(){
+  const labels = months;
+  priceChart.data.labels = labels;
+  priceChart.data.datasets = stocks.map(s=>({ label:s.name, data: computePricePath(s.id, s.price), fill:false }));
+  priceChart.update();
+}
+
+async function refreshLeaderboard(semester, section){
+  const basePrices = Object.fromEntries(stocks.map(s=>[s.id, s.price]));
+  const url = `${SCRIPT_URL}?mode=leaderboard&semester=${encodeURIComponent(semester)}&section=${encodeURIComponent(section)}&prices=${encodeURIComponent(JSON.stringify(basePrices))}&timeline=${encodeURIComponent(JSON.stringify(timeline))}`;
+  const j = await fetch(url).then(r=>r.json());
+  const ol = document.getElementById('leaders'); ol.innerHTML='';
+  (j.leaders||[]).forEach((u,i)=>{
+    const li=document.createElement('li'); li.textContent = `#${i+1} • ${u.uid} — $${u.value.toFixed(2)}`; ol.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>
