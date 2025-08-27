@@ -8,145 +8,227 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<header class="header"><div class="container navbar"><a class="btn back" href="./home.html">← Back</a><h1 style="margin:0">Dashboard</h1></div></header>
-<main class="container">
-  <section class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    <label class="label" for="semester">Semester</label>
-    <select id="semester"><option>FALL</option><option>SPRING</option></select>
-    <label class="label" for="section">Section</label>
-    <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
-    <button class="btn" id="loadPreset">Load Preset</button>
-    <button class="btn ghost" id="applyTimeline">Apply Timeline</button>
-    <button class="btn ghost" id="randomTimeline">Randomize Events</button>
-    <a class="btn ghost" href="./stocks.html" target="_blank">Stock Info</a>
+<header class="header">
+  <div class="container navbar">
+    <a class="btn back" href="./home.html">← Back</a>
+    <h1 style="margin:0">Dashboard</h1>
+  </div>
+</header>
+
+<main class="container no-scroll">
+  <!-- Controls -->
+  <section class="card">
+    <div class="controls">
+      <label class="label" for="semester">Semester</label>
+      <select id="semester"><option>FALL</option><option>SPRING</option></select>
+
+      <label class="label" for="section">Section</label>
+      <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+
+      <button class="btn" id="loadPreset">Load Preset</button>
+      <button class="btn ghost" id="randomTimeline">Random Events</button>
+      <a class="btn ghost" href="./stocks.html" target="_blank">Stock Info</a>
+    </div>
   </section>
 
-  <section class="card">
-    <h2>Class Holdings by Stock</h2>
-    <canvas id="holdingsChart" height="120"></canvas>
-    <p id="submissionsTotal" class="footer"></p>
-  </section>
+  <!-- 2-column dashboard (no scroll) -->
+  <section class="grid dash" style="min-height:0">
+    <div class="dash-main">
+      <div class="card panel">
+        <h2>Class Holdings by Stock</h2>
+        <canvas id="holdingsChart"></canvas>
+        <p id="submissionsTotal" class="footer"></p>
+      </div>
+      <div class="card panel">
+        <h2>Price Path (5 months)</h2>
+        <canvas id="priceChart"></canvas>
+        <p class="footer">Events drive hidden multipliers per stock.</p>
+      </div>
+    </div>
 
-  <section class="card">
-    <h2>Price Path (5 months)</h2>
-    <canvas id="priceChart" height="120"></canvas>
-    <p class="footer">Multipliers apply month by month based on the timeline.</p>
-  </section>
+    <aside class="sidebar">
+      <div class="card panel scroll">
+        <h2>Top 10 Leaderboard</h2>
+        <ol id="leaders" class="list"></ol>
+      </div>
 
-  <section class="card">
-    <h2>Top 10 Leaderboard</h2>
-    <ol id="leaders"></ol>
-  </section>
-
-  <section class="card">
-    <h2>Timeline Editor</h2>
-    <div id="timeline" class="grid two"></div>
+      <div class="card panel scroll">
+        <h2>Timeline Events</h2>
+        <div id="monthsTabs" class="event-list" style="margin-bottom:10px"></div>
+        <div id="eventChips" class="event-list"></div>
+        <p class="footer">Click events to toggle for the selected month.</p>
+      </div>
+    </aside>
   </section>
 </main>
-<script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
-let stocks=[], prices={};
-fetch('./stocks.json').then(r=>r.json()).then(list=>{ stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price])); init(); });
 
+<script>
+const SCRIPT_URL='PASTE_YOUR_WEB_APP_URL_HERE';
+
+let stocks=[], prices={};
 const FALL_MONTHS=['Aug','Sep','Oct','Nov','Dec'];
 const SPRING_MONTHS=['Jan','Feb','Mar','Apr','May'];
 let months = FALL_MONTHS;
-let timeline = [];
 
-function emptyTimeline(){ return months.map(m=>({month:m, factors:{}})); }
+// ------------- Event Library (hidden multipliers) ---------------
+// Each event has per-stock multipliers (only list stocks it affects).
+const EVENTS = [
+  { id:'WELCOME', name:'Welcome Week surge', factors:{ SNACK:1.10, MEDIA:1.15, COFFEE:1.05 }},
+  { id:'RAINOUT', name:'Rainout', factors:{ SNACK:0.70, TSHIRT:0.80, VRBOOTH:0.85 }},
+  { id:'MIDTERMS', name:'Midterms week', factors:{ TUTOR:1.40, PRINT:1.20, COFFEE:1.10 }},
+  { id:'SOLDOUT', name:'Sold-out game', factors:{ SNACK:1.60, TSHIRT:1.40, VRBOOTH:1.30 }},
+  { id:'FINALS', name:'Finals week', factors:{ TUTOR:1.50, COFFEE:1.20, MEDIA:1.10 }},
+  { id:'TORTE', name:'Tortilla shortage — game canceled', factors:{ SNACK:0.60, TSHIRT:0.75, VRBOOTH:0.80 }},
+  { id:'DUST', name:'Dust storm week', factors:{ RIDESH:1.15, COFFEE:1.08 }},
+  { id:'GAS', name:'Gas line shutdown (no class)', factors:{ COFFEE:0.7, TUTOR:0.8 }},
+  { id:'MAHOMES', name:'Patrick Mahomes visit', factors:{ MEDIA:1.35, VRBOOTH:1.25, SNACK:1.15 }},
+  { id:'LICENSE', name:'Licensing fee increase', factors:{ TSHIRT:0.85 }}
+];
+
+// state: selected events per month (array of arrays of event ids)
+let timelineSelections = []; // [[eventId,eventId], ...]
+let activeMonthIndex = 0;
+
+// fetch stocks then boot
+fetch('./stocks.json').then(r=>r.json()).then(list=>{
+  stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price]));
+  init();
+});
+
+function monthsForSemester(sem){ return sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS; }
 
 function init(){
-  buildTimelineUI();
-  document.getElementById('loadPreset').onclick = loadPreset;
-  document.getElementById('applyTimeline').onclick = refreshAll;
-  document.getElementById('randomTimeline').onclick = ()=>{ randomizeTimeline(); refreshAll(); };
+  setupControls();
+  resetTimeline();
+  buildMonthsTabs();
+  buildEventChips();
+  refreshAll();
+}
+
+function setupControls(){
+  document.getElementById('semester').onchange = ()=>{ months = monthsForSemester(semester()); resetTimeline(); buildMonthsTabs(); buildEventChips(); refreshAll(); };
   document.getElementById('section').onchange = refreshAll;
-  document.getElementById('semester').onchange = onSemesterChange;
-  onSemesterChange();
-}
-
-function onSemesterChange(){
-  const sem=document.getElementById('semester').value.toUpperCase();
-  months = sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS;
-  timeline = emptyTimeline();
-  buildTimelineUI();
-  refreshAll();
-}
-
-async function loadPreset(){
-  const sem=document.getElementById('semester').value.toUpperCase();
-  const url = sem==='SPRING'? './data/presets/spring.json' : './data/presets/fall.json';
-  timeline = await fetch(url).then(r=>r.json());
-  buildTimelineUI();
-  refreshAll();
-}
-
-function randomizeTimeline(){
-  timeline = emptyTimeline();
-  stocks.forEach(s=>{ timeline.forEach(t=>{ t.factors[s.id] = +(0.8 + Math.random()*0.8).toFixed(2); }); });
-}
-
-function buildTimelineUI(){
-  const root=document.getElementById('timeline'); root.innerHTML='';
-  timeline = timeline.length? timeline : emptyTimeline();
-  timeline.forEach((t,i)=>{
-    const el=document.createElement('div'); el.className='card';
-    el.innerHTML=`<h3>${t.month}</h3>`;
-    const box=document.createElement('div'); box.className='grid two';
-    stocks.forEach(s=>{
-      const w=document.createElement('div');
-      w.innerHTML=`<label class='label'>${s.name}</label><input type='number' step='0.1' value='${(t.factors[s.id]||1).toFixed(1)}' data-month='${i}' data-id='${s.id}' style='width:120px;padding:8px;border:1px solid #333;border-radius:10px'>`;
-      box.appendChild(w);
+  document.getElementById('loadPreset').onclick = async ()=>{
+    const url = semester()==='SPRING'? './data/presets/spring.json' : './data/presets/fall.json';
+    const preset = await fetch(url).then(r=>r.json());
+    // convert numeric preset to event selections by greedy match (best-effort)
+    resetTimeline();
+    // Simple mapping to similar events
+    const map = { 'Aug':'WELCOME', 'Sep':'RAINOUT', 'Oct':'MIDTERMS', 'Nov':'SOLDOUT', 'Dec':'FINALS',
+                  'Jan':'WELCOME', 'Feb':'DUST', 'Mar':'MIDTERMS', 'Apr':'SOLDOUT', 'May':'FINALS' };
+    preset.forEach((m,i)=>{ const e = map[m.month]; if(e){ timelineSelections[i] = [e]; }});
+    activeMonthIndex=0; buildMonthsTabs(); buildEventChips(); refreshAll();
+  };
+  document.getElementById('randomTimeline').onclick = ()=>{
+    resetTimeline();
+    timelineSelections = timelineSelections.map(()=> {
+      // 1–2 random events per month
+      const pool = [...EVENTS].sort(()=>Math.random()-0.5).slice(0, Math.random()>0.5?2:1);
+      return pool.map(p=>p.id);
     });
-    el.appendChild(box); root.appendChild(el);
-  });
-  root.addEventListener('input', e=>{
-    const id=e.target.getAttribute('data-id'); const mi=Number(e.target.getAttribute('data-month'));
-    const v=Math.max(0, Number(e.target.value||1));
-    timeline[mi].factors[id]=v;
+    buildEventChips(); refreshAll();
+  };
+}
+
+function semester(){ return document.getElementById('semester').value.toUpperCase(); }
+function section(){ return document.getElementById('section').value.toUpperCase(); }
+
+function resetTimeline(){
+  months = monthsForSemester(semester());
+  timelineSelections = months.map(()=>[]);
+  activeMonthIndex = 0;
+}
+
+function buildMonthsTabs(){
+  const root=document.getElementById('monthsTabs'); root.innerHTML='';
+  months.forEach((m,i)=>{
+    const el=document.createElement('button');
+    el.className = 'event-chip' + (i===activeMonthIndex?' active':'');
+    el.textContent = m;
+    el.onclick = ()=>{ activeMonthIndex=i; buildMonthsTabs(); buildEventChips(); };
+    root.appendChild(el);
   });
 }
 
-const holdingsChart = new Chart(document.getElementById('holdingsChart').getContext('2d'),{type:'bar', data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]}, options:{responsive:true,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
-const priceChart = new Chart(document.getElementById('priceChart').getContext('2d'),{type:'line',data:{labels:[],datasets:[]},options:{responsive:true,animation:false}});
+function buildEventChips(){
+  const root=document.getElementById('eventChips'); root.innerHTML='';
+  const selected = new Set(timelineSelections[activeMonthIndex]);
+  EVENTS.forEach(ev=>{
+    const chip=document.createElement('button');
+    chip.className='event-chip'+(selected.has(ev.id)?' active':'');
+    chip.innerHTML = `<span class="dot" style="background:${selected.has(ev.id)?'#e50914':'#526'}"></span> ${ev.name}`;
+    chip.onclick=()=>{ 
+      if(selected.has(ev.id)) selected.delete(ev.id); else selected.add(ev.id);
+      timelineSelections[activeMonthIndex] = [...selected];
+      chip.classList.toggle('active');
+      refreshAll();
+    };
+    root.appendChild(chip);
+  });
+}
+
+// derive numeric timeline (multipliers) from event selections
+function numericTimeline(){
+  return months.map((month, i)=>{
+    const picks = timelineSelections[i] || [];
+    const factors = {};
+    picks.forEach(pid=>{
+      const ev = EVENTS.find(e=>e.id===pid);
+      if(!ev) return;
+      Object.entries(ev.factors).forEach(([sid,mult])=>{
+        factors[sid] = (factors[sid]||1) * mult;
+      });
+    });
+    return { month, factors };
+  });
+}
+
+const holdingsChart = new Chart(document.getElementById('holdingsChart').getContext('2d'),{
+  type:'bar', data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]},
+  options:{responsive:true,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+});
+const priceChart = new Chart(document.getElementById('priceChart').getContext('2d'),{
+  type:'line', data:{labels:[],datasets:[]},
+  options:{responsive:true,animation:false,plugins:{legend:{display:false}}}
+});
 
 async function refreshAll(){
-  const sem=document.getElementById('semester').value.toUpperCase();
-  const section=document.getElementById('section').value.toUpperCase();
-  await refreshHoldings(sem, section);
-  await refreshLeaderboard(sem, section);
+  await refreshHoldings();
+  await refreshLeaderboard();
   refreshPriceChart();
 }
 
-async function refreshHoldings(semester, section){
-  const url = `${SCRIPT_URL}?mode=tally&semester=${encodeURIComponent(semester)}&section=${encodeURIComponent(section)}`;
-  const j = await fetch(url).then(r=>r.json());
+async function refreshHoldings(){
+  const url = `${SCRIPT_URL}?mode=tally&semester=${encodeURIComponent(semester())}&section=${encodeURIComponent(section())}`;
+  const j = await fetch(url).then(r=>r.json()).catch(()=>({tally:{},total:0}));
   document.getElementById('submissionsTotal').textContent = `${j.total||0} portfolios submitted`;
   const labels = stocks.map(s=>s.name);
   const data = stocks.map(s=> (j.tally && j.tally[s.id] ? j.tally[s.id].invested : 0));
   holdingsChart.data.labels = labels; holdingsChart.data.datasets[0].data = data; holdingsChart.update();
 }
 
-function computePricePath(stockId, base){
-  const arr=[]; let p=base;
-  for(let i=0;i<months.length;i++){ const f = (timeline[i] && timeline[i].factors[stockId]) || 1; p = (i===0? base : p) * f; arr.push(p); }
+function computePath(stockId, base){
+  let p = base; const arr=[];
+  const tl = numericTimeline();
+  tl.forEach(t=>{ p *= (t.factors[stockId] || 1); arr.push(p); });
   return arr;
 }
 
 function refreshPriceChart(){
-  const labels = months;
-  priceChart.data.labels = labels;
-  priceChart.data.datasets = stocks.map(s=>({ label:s.name, data: computePricePath(s.id, s.price), fill:false }));
+  priceChart.data.labels = months;
+  priceChart.data.datasets = stocks.map(s=>({ label:s.name, data: computePath(s.id, s.price), fill:false }));
   priceChart.update();
 }
 
-async function refreshLeaderboard(semester, section){
+async function refreshLeaderboard(){
   const basePrices = Object.fromEntries(stocks.map(s=>[s.id, s.price]));
-  const url = `${SCRIPT_URL}?mode=leaderboard&semester=${encodeURIComponent(semester)}&section=${encodeURIComponent(section)}&prices=${encodeURIComponent(JSON.stringify(basePrices))}&timeline=${encodeURIComponent(JSON.stringify(timeline))}`;
-  const j = await fetch(url).then(r=>r.json());
+  const url = `${SCRIPT_URL}?mode=leaderboard&semester=${encodeURIComponent(semester())}&section=${encodeURIComponent(section())}&prices=${encodeURIComponent(JSON.stringify(basePrices))}&timeline=${encodeURIComponent(JSON.stringify(numericTimeline()))}`;
+  const j = await fetch(url).then(r=>r.json()).catch(()=>({leaders:[]}));
   const ol = document.getElementById('leaders'); ol.innerHTML='';
   (j.leaders||[]).forEach((u,i)=>{
-    const li=document.createElement('li'); li.textContent = `#${i+1} • ${u.uid} — $${u.value.toFixed(2)}`; ol.appendChild(li);
+    const li=document.createElement('li');
+    li.innerHTML = `<span class="rank">#${i+1}</span><span class="uid">${u.uid}</span><span>$${u.value.toFixed(2)}</span>`;
+    ol.appendChild(li);
   });
 }
 </script>
