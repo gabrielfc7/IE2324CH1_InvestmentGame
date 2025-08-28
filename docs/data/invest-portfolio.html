@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portfolio · IE 2324 Investment Game</title>
-  <link rel="stylesheet" href="ttu-dark.css">
+  <link rel="stylesheet" href="../ttu-dark.css">
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziZR_L6C2A-QNwLADPrtQS-cOT5SY-vA1ZWWz5bYfbkqQH8EivfcotMPm3lTuF_QP5/exec";
     const STOCKS = {"AAPL": {"name": "Matador Tech (AAPL)", "price": 25, "sector": "Tech", "desc": "Flagship consumer devices and services."}, "MSFT": {"name": "Raider Cloud (MSFT)", "price": 20, "sector": "Tech", "desc": "Productivity and cloud."}, "TSLA": {"name": "Wind West EV (TSLA)", "price": 18, "sector": "Industrial", "desc": "Electric vehicles and energy storage."}, "NVDA": {"name": "GPU Forge (NVDA)", "price": 15, "sector": "Tech", "desc": "AI chips and platforms."}, "KO": {"name": "Red Cup Beverages (KO)", "price": 10, "sector": "Consumer", "desc": "Beverages and snacks."}, "TTUR": {"name": "TTU Utilities", "price": 12, "sector": "Utilities", "desc": "Campus utilities and energy."}, "REDR": {"name": "Raider Retail", "price": 9, "sector": "Retail", "desc": "Campus and local retail."}, "RAID": {"name": "Raider Defense", "price": 14, "sector": "Industrial", "desc": "Security and aerospace."}, "MESA": {"name": "Llano Health", "price": 11, "sector": "Healthcare", "desc": "Regional healthcare network."}, "TUND": {"name": "High Plains Logistics", "price": 13, "sector": "Logistics", "desc": "Distribution and transport."}};
@@ -110,7 +110,7 @@
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
-</head>
+<style>html,body{overflow:hidden}</style></head>
 <body>
 
 <header>
@@ -122,10 +122,10 @@
       <a href="stocks.html" class="">Stocks</a>
       <a href="dashboard-portfolio.html" class="">Dashboard</a>
       <a href="qr.html" class="">QR Screen</a>
-    </nav>
+    <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main>
+<main><div id="fit">
   <section class="card">
     <h2>Build Your Portfolio</h2>
     <div class="grid">
@@ -139,21 +139,7 @@
 <option>003</option>
 <option>004</option>
 <option>005</option>
-<option>006</option>
-<option>007</option>
-<option>008</option>
-<option>009</option>
-<option>010</option>
-<option>D01</option>
-<option>D02</option>
-<option>D03</option>
-<option>D04</option>
-<option>D05</option>
-<option>D06</option>
-<option>D07</option>
-<option>D08</option>
-<option>D09</option>
-<option>D10</option></select>
+<option>D01</option></select>
         </div>
         <div class="row">
           <label for="semester">Semester</label>
@@ -291,6 +277,26 @@
     
     </div>
   </section>
-</main>
+</div></main>
+<script>
+  function fitToViewport() {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
+    const fit = document.getElementById('fit');
+    if (!fit) return;
+    fit.style.transform = 'scale(1)';
+    fit.style.transformOrigin = 'top left';
+    const rect = fit.getBoundingClientRect();
+    const scale = Math.min(w / rect.width, availH / rect.height, 1);
+    fit.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('load', fitToViewport);
+  window.addEventListener('resize', fitToViewport);
+</script>
+
+
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

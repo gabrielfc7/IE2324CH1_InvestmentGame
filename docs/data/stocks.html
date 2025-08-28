@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stocks · IE 2324 Investment Game</title>
-  <link rel="stylesheet" href="ttu-dark.css">
+  <link rel="stylesheet" href="../ttu-dark.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     let HIST = null, DATA = null;
@@ -59,7 +59,7 @@
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
-</head>
+<style>html,body{overflow:hidden}</style></head>
 <body>
 
 <header>
@@ -71,10 +71,10 @@
       <a href="stocks.html" class="active">Stocks</a>
       <a href="dashboard-portfolio.html" class="">Dashboard</a>
       <a href="qr.html" class="">QR Screen</a>
-    </nav>
+    <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main>
+<main><div id="fit">
   <section class="card">
     <h2>QR: Join the Game</h2>
     <div class="row">
@@ -86,21 +86,7 @@
 <option>003</option>
 <option>004</option>
 <option>005</option>
-<option>006</option>
-<option>007</option>
-<option>008</option>
-<option>009</option>
-<option>010</option>
-<option>D01</option>
-<option>D02</option>
-<option>D03</option>
-<option>D04</option>
-<option>D05</option>
-<option>D06</option>
-<option>D07</option>
-<option>D08</option>
-<option>D09</option>
-<option>D10</option></select>
+<option>D01</option></select>
     </div>
     <div class="qr"><img id="qrimg" width="200" height="200" alt="QR to invest page"></div>
     <p class="small">Deep link: <a id="deepLink" href="#" target="_blank"></a> &nbsp; <span class="small">(QR generated locally)</span></p>
@@ -119,8 +105,28 @@
       <label>Stock</label>
       <select id="stockSel"></select>
     </div>
-    <div class="chart-wrap"><canvas id="stockChart" height="140"></canvas></div>
+    <div class="chart-wrap"><canvas id="stockChart" height="110"></canvas></div>
   </section>
-</main>
+</div></main>
+<script>
+  function fitToViewport() {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
+    const fit = document.getElementById('fit');
+    if (!fit) return;
+    fit.style.transform = 'scale(1)';
+    fit.style.transformOrigin = 'top left';
+    const rect = fit.getBoundingClientRect();
+    const scale = Math.min(w / rect.width, availH / rect.height, 1);
+    fit.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('load', fitToViewport);
+  window.addEventListener('resize', fitToViewport);
+</script>
+
+
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

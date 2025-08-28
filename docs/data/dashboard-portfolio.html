@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard · IE 2324 Investment Game</title>
-  <link rel="stylesheet" href="ttu-dark.css">
+  <link rel="stylesheet" href="../ttu-dark.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziZR_L6C2A-QNwLADPrtQS-cOT5SY-vA1ZWWz5bYfbkqQH8EivfcotMPm3lTuF_QP5/exec";
@@ -160,7 +160,7 @@
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
-</head>
+<style>html,body{overflow:hidden}</style></head>
 <body>
 
 <header>
@@ -172,10 +172,10 @@
       <a href="stocks.html" class="">Stocks</a>
       <a href="dashboard-portfolio.html" class="active">Dashboard</a>
       <a href="qr.html" class="">QR Screen</a>
-    </nav>
+    <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main>
+<main><div id="fit">
   <section class="card">
     <div class="row">
       <label>Semester</label>
@@ -207,7 +207,7 @@
     </section>
     <section class="card">
       <h2>Holdings by Stock</h2>
-      <div class="chart-wrap"><canvas id="holdings" height="130"></canvas></div>
+      <div class="chart-wrap"><canvas id="holdings" height="110"></canvas></div>
     </section>
   </div>
 
@@ -221,7 +221,7 @@
     </section>
     <section class="card">
       <h2>Sector Composition</h2>
-      <div class="chart-wrap"><canvas id="sectorPie" height="130"></canvas></div>
+      <div class="chart-wrap"><canvas id="sectorPie" height="110"></canvas></div>
     </section>
   </div>
 
@@ -239,6 +239,26 @@
       <div id="events" class="grid"></div>
     </section>
   </div>
-</main>
+</div></main>
+<script>
+  function fitToViewport() {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
+    const fit = document.getElementById('fit');
+    if (!fit) return;
+    fit.style.transform = 'scale(1)';
+    fit.style.transformOrigin = 'top left';
+    const rect = fit.getBoundingClientRect();
+    const scale = Math.min(w / rect.width, availH / rect.height, 1);
+    fit.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('load', fitToViewport);
+  window.addEventListener('resize', fitToViewport);
+</script>
+
+
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QR Screen · IE 2324 Investment Game</title>
-  <link rel="stylesheet" href="ttu-dark.css">
+  <link rel="stylesheet" href="../ttu-dark.css">
   <style>
     main{max-width:900px;text-align:center}
     .big{font-size:1.25rem}
@@ -18,7 +18,7 @@
     }
     window.addEventListener('DOMContentLoaded', update);
   </script>
-</head>
+<style>html,body{overflow:hidden}</style></head>
 <body>
 
 <header>
@@ -30,10 +30,10 @@
       <a href="stocks.html" class="">Stocks</a>
       <a href="dashboard-portfolio.html" class="">Dashboard</a>
       <a href="qr.html" class="active">QR Screen</a>
-    </nav>
+    <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main>
+<main><div id="fit">
   <h2>Big QR</h2>
   <p class="big">Select Semester and Section, then project this screen in class.</p>
   <div class="row"><label>Semester</label><select id="sem" onchange="update()"><option>FALL</option><option>SPRING</option></select>
@@ -42,23 +42,29 @@
 <option>003</option>
 <option>004</option>
 <option>005</option>
-<option>006</option>
-<option>007</option>
-<option>008</option>
-<option>009</option>
-<option>010</option>
-<option>D01</option>
-<option>D02</option>
-<option>D03</option>
-<option>D04</option>
-<option>D05</option>
-<option>D06</option>
-<option>D07</option>
-<option>D08</option>
-<option>D09</option>
-<option>D10</option></select></div>
+<option>D01</option></select></div>
   <div class="qr"><img id="qr" width="320" height="320" alt="QR"></div>
   <p class="small">Deep link: <a id="deep" href="#" target="_blank"></a> &nbsp; <span class="small">(QR generated locally)</span></p>
-</main>
+</div></main>
+<script>
+  function fitToViewport() {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
+    const fit = document.getElementById('fit');
+    if (!fit) return;
+    fit.style.transform = 'scale(1)';
+    fit.style.transformOrigin = 'top left';
+    const rect = fit.getBoundingClientRect();
+    const scale = Math.min(w / rect.width, availH / rect.height, 1);
+    fit.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('load', fitToViewport);
+  window.addEventListener('resize', fitToViewport);
+</script>
+
+
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

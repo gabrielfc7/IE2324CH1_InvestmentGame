@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Charts · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="../ttu-dark.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .mini{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px}
+    .row{display:flex;gap:10px;align-items:center;margin:6px 0}
+    @media (max-width: 900px){ .grid{grid-template-columns:repeat(3,1fr)}
+    }
+    @media (max-width: 640px){ .grid{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html">Home</a>
+      <a href="invest-portfolio.html">Portfolio</a>
+      <a href="stocks.html">Stocks</a>
+      <a href="dashboard-portfolio.html">Dashboard</a>
+      <a href="qr.html">QR Screen</a>
+      <a href="historical-all.html" class="active">All Charts</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div id="fit">
+  <section class="card">
+    <div class="row">
+      <label>Semester</label>
+      <select id="semSel"><option>2024-Fall</option><option>2025-Spring</option></select>
+    </div>
+    <div id="charts" class="grid"></div>
+  </section>
+</div>
+</main>
+<footer>© 2025 IE 2324 · TTU</footer>
+<script>
+  let HIST=null, STOCKS=null;
+  async function init(){
+    HIST = await (await fetch('historical.json')).json();
+    STOCKS = (await (await fetch('stocks.json')).json()).stocks;
+    document.getElementById('semSel').addEventListener('change', render);
+    render();
+  }
+  function render(){
+    const key = document.getElementById('semSel').value;
+    const cfg = HIST[key];
+    const wrap = document.getElementById('charts'); wrap.innerHTML='';
+    Object.keys(STOCKS).forEach(id=>{
+      const div = document.createElement('div'); div.className='mini';
+      div.innerHTML = `<div class="small"><strong>${id}</strong> — ${STOCKS[id].name}</div><canvas id="c_${id}" height="90"></canvas>`;
+      wrap.appendChild(div);
+      const ctx = div.querySelector('canvas').getContext('2d');
+      const series = (cfg.series[id]||[]);
+      new Chart(ctx, {
+        type:'line',
+        data:{ labels: cfg.labels, datasets:[{ label:id, data: series, borderWidth:1.5, fill:false, tension:.2 }] },
+        options:{
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ ticks:{ color:'#a8b0bf', maxRotation:0 }, grid:{ color:'#252a34' }, title:{ display:true, text:'Month', color:'#a8b0bf' } }, 
+                   y:{ ticks:{ color:'#a8b0bf' }, grid:{ color:'#252a34' }, title:{ display:true, text:'Price $', color:'#a8b0bf' } } }
+        }
+      });
+    });
+  }
+  
+<script>
+  function fitToViewport() {
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const h = window.innerHeight;
+    const w = window.innerWidth;
+    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
+    const fit = document.getElementById('fit');
+    if (!fit) return;
+    fit.style.transform = 'scale(1)';
+    fit.style.transformOrigin = 'top left';
+    const rect = fit.getBoundingClientRect();
+    const scale = Math.min(w / rect.width, availH / rect.height, 1);
+    fit.style.transform = 'scale(' + scale + ')';
+  }
+  window.addEventListener('load', fitToViewport);
+  window.addEventListener('resize', fitToViewport);
+</script>
+
+  window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
