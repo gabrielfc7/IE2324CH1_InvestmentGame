@@ -59,7 +59,7 @@
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
-<style>html,body{overflow:hidden}</style></head>
+</head>
 <body>
 
 <header>
@@ -74,7 +74,7 @@
     <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main><div id="fit">
+<main>
   <section class="card">
     <h2>QR: Join the Game</h2>
     <div class="row">
@@ -107,25 +107,8 @@
     </div>
     <div class="chart-wrap"><canvas id="stockChart" height="110"></canvas></div>
   </section>
-</div></main>
-<script>
-  function fitToViewport() {
-    const header = document.querySelector('header');
-    const footer = document.querySelector('footer');
-    const h = window.innerHeight;
-    const w = window.innerWidth;
-    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
-    const fit = document.getElementById('fit');
-    if (!fit) return;
-    fit.style.transform = 'scale(1)';
-    fit.style.transformOrigin = 'top left';
-    const rect = fit.getBoundingClientRect();
-    const scale = Math.min(w / rect.width, availH / rect.height, 1);
-    fit.style.transform = 'scale(' + scale + ')';
-  }
-  window.addEventListener('load', fitToViewport);
-  window.addEventListener('resize', fitToViewport);
-</script>
+</main>
+
 
 
 <footer>© 2025 IE 2324 · TTU</footer>

@@ -18,7 +18,7 @@
     }
     window.addEventListener('DOMContentLoaded', update);
   </script>
-<style>html,body{overflow:hidden}</style></head>
+</head>
 <body>
 
 <header>
@@ -33,7 +33,7 @@
     <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main><div id="fit">
+<main>
   <h2>Big QR</h2>
   <p class="big">Select Semester and Section, then project this screen in class.</p>
   <div class="row"><label>Semester</label><select id="sem" onchange="update()"><option>FALL</option><option>SPRING</option></select>
@@ -45,25 +45,8 @@
 <option>D01</option></select></div>
   <div class="qr"><img id="qr" width="320" height="320" alt="QR"></div>
   <p class="small">Deep link: <a id="deep" href="#" target="_blank"></a> &nbsp; <span class="small">(QR generated locally)</span></p>
-</div></main>
-<script>
-  function fitToViewport() {
-    const header = document.querySelector('header');
-    const footer = document.querySelector('footer');
-    const h = window.innerHeight;
-    const w = window.innerWidth;
-    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
-    const fit = document.getElementById('fit');
-    if (!fit) return;
-    fit.style.transform = 'scale(1)';
-    fit.style.transformOrigin = 'top left';
-    const rect = fit.getBoundingClientRect();
-    const scale = Math.min(w / rect.width, availH / rect.height, 1);
-    fit.style.transform = 'scale(' + scale + ')';
-  }
-  window.addEventListener('load', fitToViewport);
-  window.addEventListener('resize', fitToViewport);
-</script>
+</main>
+
 
 
 <footer>© 2025 IE 2324 · TTU</footer>

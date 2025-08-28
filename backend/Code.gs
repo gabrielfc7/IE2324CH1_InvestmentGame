@@ -48,8 +48,21 @@ function doGet(e) {
 }
 
 // ---- Helpers ----
+function openTargetSpreadsheet_() {
+  var id = (PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '').trim();
+  if (id) {
+    try { return SpreadsheetApp.openById(id); } catch(e) {}
+  }
+  // Try active (container-bound) sheet
+  var active = SpreadsheetApp.getActive();
+  if (active) return active;
+  // Else create one and store ID
+  var ss = SpreadsheetApp.create('IE2324 Investment Game Data');
+  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
+  return ss;
+}
 function getSheet_(name) {
-  var ss = SpreadsheetApp.getActive();
+  var ss = openTargetSpreadsheet_();
   var sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);

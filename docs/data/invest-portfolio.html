@@ -84,16 +84,19 @@
 
     function submitForm(ev){
       window.__submittedOnce = true; // guard
+      let __tm = setTimeout(()=>{
+        const t = document.getElementById('toast');
+        t.textContent = 'No confirmation received. Check web app access.';
+        t.className = 'toast err show';
+      }, 5000);
       window.addEventListener('message', function(ev){
         try{
           const data = ev.data || {};
-          if (typeof data !== 'object') return;
+          if (typeof data !== 'object') return; clearTimeout(__tm);
           if (data.ok) {
-            document.getElementById('status').textContent = 'Submitted successfully!';
-            document.getElementById('status').className = 'success';
+            document.getElementById('status').textContent = 'Submitted successfully!'; document.getElementById('status').className = 'success'; const t=document.getElementById('toast'); t.textContent='Portfolio submitted!'; t.className='toast ok show'; setTimeout(()=>t.classList.remove('show'), 2500);
           } else {
-            document.getElementById('status').textContent = 'Submit failed. Check script permissions.';
-            document.getElementById('status').className = 'error';
+            document.getElementById('status').textContent = 'Submit failed. Check script permissions.'; document.getElementById('status').className = 'error'; const t=document.getElementById('toast'); t.textContent='Submit failed'; t.className='toast err show';
           }
         }catch(e){}
       }, { once: true });
@@ -124,7 +127,13 @@
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
-<style>html,body{overflow:hidden}</style></head>
+<style>
+.toast{position:fixed;right:16px;bottom:16px;background:#0b0e14;border:1px solid #2a3040;color:#e7e9ee;padding:10px 14px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;transform:translateY(10px);transition:all .25s}
+.toast.show{opacity:1;transform:none}
+.toast.ok{border-color:#16a34a}
+.toast.err{border-color:#ef4444}
+</style>
+</head>
 <body>
 
 <header>
@@ -139,7 +148,7 @@
     <a href="historical-all.html">All Charts</a></nav>
   </div>
 </header>
-<main><div id="fit">
+<main>
   <section class="card">
     <h2>Build Your Portfolio</h2>
     <div class="grid">
@@ -291,26 +300,10 @@
     
     </div>
   </section>
-</div></main>
-<script>
-  function fitToViewport() {
-    const header = document.querySelector('header');
-    const footer = document.querySelector('footer');
-    const h = window.innerHeight;
-    const w = window.innerWidth;
-    const availH = h - (header ? header.offsetHeight : 0) - (footer ? footer.offsetHeight : 0) - 8;
-    const fit = document.getElementById('fit');
-    if (!fit) return;
-    fit.style.transform = 'scale(1)';
-    fit.style.transformOrigin = 'top left';
-    const rect = fit.getBoundingClientRect();
-    const scale = Math.min(w / rect.width, availH / rect.height, 1);
-    fit.style.transform = 'scale(' + scale + ')';
-  }
-  window.addEventListener('load', fitToViewport);
-  window.addEventListener('resize', fitToViewport);
-</script>
+</main>
 
 
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>
