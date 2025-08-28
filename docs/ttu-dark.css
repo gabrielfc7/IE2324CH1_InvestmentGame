@@ -16,8 +16,8 @@ nav{display:flex;gap:14px;flex-wrap:wrap}
 nav a{padding:8px 12px;border-radius:10px;border:1px solid transparent}
 nav a.active, nav a:hover{background:var(--card);border-color:var(--border)}
 main{max-width:1400px;margin:0 auto;padding:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .card h2{margin-top:0}
 section h2{margin:8px 0 6px 0}
 hr{border:0;border-top:1px solid var(--border);margin:18px 0}
