@@ -9,6 +9,8 @@
  */
 
 function doPost(e) {
+  var _iframe = e && e.parameter && (e.parameter.iframe || "");
+  var _origin = e && e.parameter && (e.parameter.origin || "*");
   try {
     var p = e.parameter || {};
     var semester = (p.semester || "").toUpperCase();
@@ -19,9 +21,17 @@ function doPost(e) {
     var cash = Number(p.cash || 0);
     var sh = getSheet_("Submissions");
     sh.appendRow([new Date(), semester, section, name, uid, allocations, cash]);
+    if (_iframe) {
+      return HtmlService.createHtmlOutput('<!DOCTYPE html><html><body><script>try{window.parent.postMessage({ok:true},'*');}catch(e){}</script>OK</body></html>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
+    if (_iframe) {
+      return HtmlService.createHtmlOutput('<!DOCTYPE html><html><body><script>try{window.parent.postMessage({ok:false,error:'+JSON.stringify(String(err))+ '},'*');}catch(e){}</script>ERROR</body></html>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    }
     return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
       .setMimeType(ContentService.MimeType.JSON);
   }

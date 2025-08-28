@@ -18,6 +18,11 @@
       document.getElementById('loadPreset').addEventListener('click', loadPreset);
       document.getElementById('randomEvents').addEventListener('click', randomizeEvents);
       buildEventChips('FALL');
+      document.getElementById('semester').addEventListener('change', ()=>{
+        const s = document.getElementById('semester').value;
+        buildEventChips(s);
+        updateEventLog();
+      });
       document.getElementById('exportCsv').addEventListener('click', ()=>{
         const s=document.getElementById('semester').value; const c=document.getElementById('section').value; window.open(SCRIPT_URL + '?mode=export_csv&semester='+s+'&section='+c, '_blank');
       });
@@ -62,6 +67,9 @@
     }
 
     async function onFilter(){
+      const semSel = document.getElementById('semester').value;
+      buildEventChips(semSel);
+      updateEventLog();
       const semester = document.getElementById('semester').value;
       const section = document.getElementById('section').value;
       await refreshKPIs(semester, section);
@@ -146,6 +154,8 @@
       const sem = document.getElementById('semester').value;
       buildEventChips(sem);
       (PR_PRESETS(sem) || []).forEach(m=> m.events.forEach(ev=> addChip(m.month, ev.stockId, Number(ev.multiplier||1))));
+      updateEventLog();
+      updateEventLog();
       refreshLeaderboard(sem, document.getElementById('section').value);
     }
     function PR_PRESETS(sem){ return sem==='FALL' ? [{"month": "Aug", "events": [{"stockId": "RAID", "multiplier": 1.03}, {"stockId": "REDR", "multiplier": 0.97}]}, {"month": "Sep", "events": [{"stockId": "MSFT", "multiplier": 1.02}, {"stockId": "KO", "multiplier": 1.01}]}, {"month": "Oct", "events": [{"stockId": "AAPL", "multiplier": 1.05}, {"stockId": "TSLA", "multiplier": 0.98}]}, {"month": "Nov", "events": [{"stockId": "NVDA", "multiplier": 1.04}]}, {"month": "Dec", "events": [{"stockId": "TTUR", "multiplier": 1.02}]}] : [{"month": "Jan", "events": [{"stockId": "TUND", "multiplier": 1.03}]}, {"month": "Feb", "events": [{"stockId": "MESA", "multiplier": 1.02}]}, {"month": "Mar", "events": [{"stockId": "REDR", "multiplier": 1.01}]}, {"month": "Apr", "events": [{"stockId": "AAPL", "multiplier": 1.03}, {"stockId": "NVDA", "multiplier": 1.02}]}, {"month": "May", "events": [{"stockId": "TSLA", "multiplier": 1.02}]}]; }
@@ -156,6 +166,8 @@
       const months = sem==='FALL' ? ['Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mar','Apr','May'];
       const ids = Object.keys(PRICES);
       months.forEach(m=>{ for(let i=0;i<3;i++){ const pick = ids[Math.floor(Math.random()*ids.length)]; const mul = (0.97 + Math.random()*0.08); addChip(m, pick, Number(mul.toFixed(2))); } });
+      updateEventLog();
+      updateEventLog();
       refreshLeaderboard(sem, document.getElementById('section').value);
     }
     window.addEventListener('DOMContentLoaded', init);
