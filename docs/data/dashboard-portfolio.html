@@ -1,27 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Portfolio Dashboard</title>
-  <link rel="stylesheet" href="ttu-dark.css" />
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="ttu-dark.css">
 </head>
 <body>
+
 <header>
-  <h1>Portfolio Dashboard</h1>
-  <nav>
-    <a href="home.html">Home</a>
-    <a href="invest-portfolio.html">Portfolio</a>
-    <a href="stocks.html">Stocks</a>
-    <a href="dashboard-portfolio.html">Dashboard</a>
-  </nav>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html" class="">Home</a>
+      <a href="invest-portfolio.html" class="">Portfolio</a>
+      <a href="stocks.html" class="">Stocks</a>
+      <a href="dashboard-portfolio.html" class="active">Dashboard</a>
+    </nav>
+  </div>
 </header>
 <main>
-  <div class="container">
-    <h2>Overview</h2>
-    <p>This dashboard will summarize your latest submission and holdings. (Stub page.)</p>
-  </div>
+  <section class="card">
+    <h2>Portfolio Dashboard</h2>
+    <p class="notice">This page can later pull aggregated results from your spreadsheet. For now, it confirms the new polished UI across the app.</p>
+    <ul>
+      <li>Dark theme with TTU accent, single clean nav.</li>
+      <li>Whole-share purchase only, no text entry.</li>
+      <li>Hidden-iframe form post to avoid CORS errors.</li>
+      <li>Charts with axis labels, legend, and dark styling.</li>
+    </ul>
+  </section>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
-</body>
-</html>
+</body></html>

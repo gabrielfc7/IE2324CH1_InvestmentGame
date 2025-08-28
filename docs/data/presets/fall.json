@@ -4,8 +4,9 @@
   "symbols": [
     "AAPL",
     "MSFT",
-    "GOOGL",
-    "AMZN"
+    "TSLA",
+    "NVDA",
+    "KO"
   ],
   "startCash": 10000
 }

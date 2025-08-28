@@ -1,10 +1,44 @@
 <!DOCTYPE html>
-<html><head>
-  <meta http-equiv="refresh" content="0; url=home.html" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Redirecting…</title>
-  <link rel="stylesheet" href="ttu-dark.css" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Index · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="ttu-dark.css">
 </head>
 <body>
-  <main class="container"><p>Redirecting to <a href="home.html">Home</a>…</p></main>
+
+<header>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html" class="active">Home</a>
+      <a href="invest-portfolio.html" class="">Portfolio</a>
+      <a href="stocks.html" class="">Stocks</a>
+      <a href="dashboard-portfolio.html" class="">Dashboard</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Welcome</h2>
+      <p>This is the practical activity site for IE 2324. Build a simple stock portfolio and visualize performance. Everything uses a clean dark theme with TTU accents.</p>
+      <span class="badge">Whole shares only</span>
+      <span class="badge">No typing, use +/-</span>
+    </section>
+    <section class="card">
+      <h2>Quick Start</h2>
+      <ol>
+        <li>Open <a href="invest-portfolio.html">Portfolio</a>, adjust shares with +/-.</li>
+        <li>Submit the form. We send it to the Apps Script backend.</li>
+        <li>See the <a href="stocks.html">Stocks</a> page for charts with labeled axes and legend.</li>
+      </ol>
+    </section>
+    <section class="card">
+      <h2>Info</h2>
+      <p class="small">If you saw a previous "network error" on submit, we now post via a hidden iframe so CORS does not block submission.</p>
+    </section>
+  </div>
+</main>
+<footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

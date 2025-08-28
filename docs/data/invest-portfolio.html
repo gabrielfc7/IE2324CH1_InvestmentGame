@@ -1,62 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Investment Game · Portfolio</title>
-  <link rel="stylesheet" href="ttu-dark.css" />
-  <script defer>
-    const state = { stockA: 0, stockB: 0 };
-    function updateShares(key, delta){
-      state[key] = Math.max(0, state[key] + delta);
-      document.getElementById(key+"Count").textContent = state[key];
-      document.getElementById("input_"+key).value = state[key];
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="ttu-dark.css">
+  <script>
+    const TICKERS = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'KO'];
+    const LAST = {"AAPL": 162, "MSFT": 318, "TSLA": 220, "NVDA": 130, "KO": 62};
+    const state = Object.fromEntries(TICKERS.map(t=>[t,0]));
+    function setCount(t, v){
+      state[t] = Math.max(0, Math.floor(v));
+      document.getElementById('count_'+t).textContent = state[t];
+      document.getElementById('input_'+t).value = state[t];
+      updateTotals();
     }
-    function preventKeys(e){ e.preventDefault(); return false; }
+    function bump(t, d){ setCount(t, state[t] + d); }
+    function updateTotals(){ 
+      let cost = 0; TICKERS.forEach(t => cost += (state[t]||0) * (LAST[t]||0));
+      document.getElementById('estCost').textContent = '$' + cost.toFixed(2);
+    }
     function init(){
-      ["stockA","stockB"].forEach(k=>updateShares(k,0));
-      document.querySelectorAll("input[type=number]").forEach(inp=>{
-        inp.setAttribute("readonly", "readonly");
-        inp.addEventListener("keydown", preventKeys);
+      TICKERS.forEach(t=>setCount(t,0));
+      document.getElementById('portfolioForm').addEventListener('submit', function(){ 
+        document.getElementById('status').textContent = 'Submitting…';
+        document.getElementById('status').className = 'notice';
+        setTimeout(()=>{ document.getElementById('status').textContent = 'Submitted! You can close this message.'; document.getElementById('status').className='success'; }, 1200);
       });
     }
-    window.addEventListener("DOMContentLoaded", init);
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </head>
 <body>
+
 <header>
-  <h1>Manage Portfolio</h1>
-  <nav>
-    <a href="home.html">Home</a>
-    <a href="invest-portfolio.html">Portfolio</a>
-    <a href="stocks.html">Stocks</a>
-    <a href="dashboard-portfolio.html">Dashboard</a>
-  </nav>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html" class="">Home</a>
+      <a href="invest-portfolio.html" class="active">Portfolio</a>
+      <a href="stocks.html" class="">Stocks</a>
+      <a href="dashboard-portfolio.html" class="">Dashboard</a>
+    </nav>
+  </div>
 </header>
 <main>
-  <div class="container">
-    <h2>Buy & Sell (Whole Shares Only)</h2>
-    <form id="portfolioForm" method="POST" action="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec">
+  <section class="card">
+    <h2>Build Your Portfolio</h2>
+    <p class="notice">Use the +/- buttons to change whole shares. Typing is disabled.</p>
+    <form id="portfolioForm" method="POST" action="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec" target="hidden_iframe">
+      <div class="grid">
+        
+        <div class="card">
+          <h3>AAPL</h3>
+          <div class="row">
+            <button class="btn secondary" type="button" onclick="bump('AAPL',-1)">-</button>
+            <div id="count_AAPL" class="counter">0</div>
+            <button class="btn" type="button" onclick="bump('AAPL',+1)">+</button>
+          </div>
+          <input id="input_AAPL" name="AAPL" type="hidden" value="0">
+          <p class="small">Last price: ${LAST['AAPL'] || 0}</p>
+        </div>
+    
+
+        <div class="card">
+          <h3>MSFT</h3>
+          <div class="row">
+            <button class="btn secondary" type="button" onclick="bump('MSFT',-1)">-</button>
+            <div id="count_MSFT" class="counter">0</div>
+            <button class="btn" type="button" onclick="bump('MSFT',+1)">+</button>
+          </div>
+          <input id="input_MSFT" name="MSFT" type="hidden" value="0">
+          <p class="small">Last price: ${LAST['MSFT'] || 0}</p>
+        </div>
+    
+
+        <div class="card">
+          <h3>TSLA</h3>
+          <div class="row">
+            <button class="btn secondary" type="button" onclick="bump('TSLA',-1)">-</button>
+            <div id="count_TSLA" class="counter">0</div>
+            <button class="btn" type="button" onclick="bump('TSLA',+1)">+</button>
+          </div>
+          <input id="input_TSLA" name="TSLA" type="hidden" value="0">
+          <p class="small">Last price: ${LAST['TSLA'] || 0}</p>
+        </div>
+    
+
+        <div class="card">
+          <h3>NVDA</h3>
+          <div class="row">
+            <button class="btn secondary" type="button" onclick="bump('NVDA',-1)">-</button>
+            <div id="count_NVDA" class="counter">0</div>
+            <button class="btn" type="button" onclick="bump('NVDA',+1)">+</button>
+          </div>
+          <input id="input_NVDA" name="NVDA" type="hidden" value="0">
+          <p class="small">Last price: ${LAST['NVDA'] || 0}</p>
+        </div>
+    
+
+        <div class="card">
+          <h3>KO</h3>
+          <div class="row">
+            <button class="btn secondary" type="button" onclick="bump('KO',-1)">-</button>
+            <div id="count_KO" class="counter">0</div>
+            <button class="btn" type="button" onclick="bump('KO',+1)">+</button>
+          </div>
+          <input id="input_KO" name="KO" type="hidden" value="0">
+          <p class="small">Last price: ${LAST['KO'] || 0}</p>
+        </div>
+    
+      </div>
+      <hr>
       <div class="row">
-        <label>Stock A</label>
-        <button class="btn" type="button" onclick="updateShares('stockA', -1)">−</button>
-        <div id="stockACount" class="counter">0</div>
-        <button class="btn" type="button" onclick="updateShares('stockA', +1)">+</button>
-        <input id="input_stockA" name="stockA" type="number" value="0" min="0" step="1" style="display:none" />
+        <strong>Estimated cost:</strong> <span id="estCost">$0.00</span>
       </div>
       <div class="row">
-        <label>Stock B</label>
-        <button class="btn" type="button" onclick="updateShares('stockB', -1)">−</button>
-        <div id="stockBCount" class="counter">0</div>
-        <button class="btn" type="button" onclick="updateShares('stockB', +1)">+</button>
-        <input id="input_stockB" name="stockB" type="number" value="0" min="0" step="1" style="display:none" />
+        <label for="section">Section</label>
+        <input id="section" name="section" placeholder="e.g., 001" style="background:#0b0e14;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px">
       </div>
-      <hr/>
-      <button class="btn" type="submit">Submit Portfolio</button>
-      <p class="small">If submission fails with a network error, verify your Apps Script deployment access is "Anyone with the link".</p>
+      <div class="row">
+        <label for="user">Name</label>
+        <input id="user" name="user" placeholder="Your name" style="background:#0b0e14;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px">
+      </div>
+      <div class="row">
+        <button class="btn" type="submit">Submit Portfolio</button>
+        <span id="status" class="notice" aria-live="polite"></span>
+      </div>
+      <iframe name="hidden_iframe" style="display:none"></iframe>
     </form>
-  </div>
+  </section>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
-</body>
-</html>
+</body></html>

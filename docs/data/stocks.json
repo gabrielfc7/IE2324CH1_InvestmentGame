@@ -1,10 +1,11 @@
 {
-  "symbols": [
-    "AAPL",
-    "MSFT",
-    "TSLA",
-    "NVDA",
-    "KO"
+  "labels": [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun"
   ],
   "prices": {
     "AAPL": [
@@ -12,21 +13,31 @@
       152,
       149,
       155,
-      160
+      160,
+      162
     ],
     "MSFT": [
       300,
       305,
       298,
       310,
-      315
+      315,
+      318
+    ],
+    "TSLA": [
+      200,
+      210,
+      190,
+      205,
+      215,
+      220
     ]
   },
-  "labels": [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May"
-  ]
+  "lastPrice": {
+    "AAPL": 162,
+    "MSFT": 318,
+    "TSLA": 220,
+    "NVDA": 130,
+    "KO": 62
+  }
 }

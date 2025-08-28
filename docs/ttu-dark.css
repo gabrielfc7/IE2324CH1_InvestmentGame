@@ -1,26 +1,48 @@
-/* TTU dark theme */
+/* TTU Dark Theme — polished */
 :root{
-  --bg:#121212; --surface:#1e1e1e; --text:#e6e6e6; --muted:#b3b3b3;
+  --bg:#0f1115;
+  --surface:#171a21;
+  --card:#141821;
+  --border:#252a34;
+  --text:#e7e9ee;
+  --muted:#a8b0bf;
   --accent:#c8102e; /* TTU red */
-  --link:#66b2ff;
-  --card:#181818;
+  --accent-2:#f22f46;
+  --link:#6ab0ff;
+  --good:#16a34a;
+  --bad:#ef4444;
+  --shadow:0 12px 30px rgba(0,0,0,.35);
 }
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;}
-a{color:var(--link);text-decoration:none;}
-a:hover{text-decoration:underline;}
-header,footer{background:var(--surface);padding:16px 20px;}
-header h1, header h2{margin:0 0 8px 0;}
-nav{display:flex;gap:16px;flex-wrap:wrap}
-main{padding:24px;max-width:1100px;margin:0 auto;}
-.container{background:var(--card);border:1px solid #2a2a2a;border-radius:14px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,.25);}
-.btn{background:var(--accent);color:white;border:none;border-radius:12px;padding:8px 14px;font-weight:600;cursor:pointer}
-.btn[disabled]{opacity:.6;cursor:not-allowed}
-.row{display:flex;gap:12px;align-items:center;margin:10px 0}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--surface),rgba(23,26,33,.85));border-bottom:1px solid var(--border);backdrop-filter:saturate(160%) blur(6px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1200px;margin:0 auto;padding:14px 20px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.brand h1{font-size:1.1rem;margin:0}
+nav{display:flex;gap:14px;flex-wrap:wrap}
+nav a{padding:8px 12px;border-radius:10px;border:1px solid transparent}
+nav a.active, nav a:hover{background:var(--card);border-color:var(--border)}
+main{max-width:1200px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.card h2{margin-top:0}
+section h2{margin:8px 0 6px 0}
+hr{border:0;border-top:1px solid var(--border);margin:18px 0}
+footer{border-top:1px solid var(--border);color:var(--muted);text-align:center;padding:20px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:9px 14px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(200,16,46,.25)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn.secondary{background:#2a3040}
+.badge{display:inline-block;background:#22283a;border:1px solid var(--border);border-radius:999px;padding:4px 10px;color:var(--muted);font-size:.9rem}
+.row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.counter{width:48px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
 label{min-width:110px;color:var(--muted)}
-.counter{min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
-hr{border:0;border-top:1px solid #2a2a2a;margin:18px 0}
-.chart-wrap{background:var(--card);padding:16px;border-radius:14px;border:1px solid #2a2a2a}
+.notice{color:var(--muted);font-size:.95rem}
+.success{color:var(--good)}
+.error{color:var(--bad)}
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
 .qr{display:flex;justify-content:center;align-items:center;padding:12px}
-.small{color:var(--muted);font-size:.9rem}
-footer{font-size:.9rem;color:var(--muted);text-align:center}
+.small{font-size:.9rem;color:var(--muted)}
+kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;background:#0b0e14;border:1px solid var(--border);padding:0 6px;border-radius:6px}

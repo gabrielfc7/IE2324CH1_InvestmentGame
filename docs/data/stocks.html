@@ -1,57 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stocks</title>
-  <link rel="stylesheet" href="ttu-dark.css" />
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stocks · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="ttu-dark.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    async function init(){
+      const res = await fetch('stocks.json'); 
+      const data = await res.json();
+      const ctx = document.getElementById('stockChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: Object.entries(data.prices).map(([name,series]) => ({ label: name, data: series, borderWidth: 2, fill: false, tension: .2 }))
+        },
+        options: {
+          responsive:true,
+          plugins: {
+            legend: { labels: { color: '#e7e9ee' } },
+            title: { display:true, text:'Stock Prices', color:'#e7e9ee' }
+          },
+          scales: {
+            x: {
+              title: { display:true, text:'Time (months)', color:'#a8b0bf' },
+              ticks: { color:'#a8b0bf' },
+              grid: { color:'#252a34' }
+            },
+            y: {
+              title: { display:true, text:'Price ($)', color:'#a8b0bf' },
+              ticks: { color:'#a8b0bf' },
+              grid: { color:'#252a34' }
+            }
+          }
+        }
+      });
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
 </head>
 <body>
+
 <header>
-  <h1>Stock Performance</h1>
-  <nav>
-    <a href="home.html">Home</a>
-    <a href="invest-portfolio.html">Portfolio</a>
-    <a href="stocks.html">Stocks</a>
-    <a href="dashboard-portfolio.html">Dashboard</a>
-  </nav>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html" class="">Home</a>
+      <a href="invest-portfolio.html" class="">Portfolio</a>
+      <a href="stocks.html" class="active">Stocks</a>
+      <a href="dashboard-portfolio.html" class="">Dashboard</a>
+    </nav>
+  </div>
 </header>
 <main>
-  <div class="chart-wrap">
-    <canvas id="stockChart" height="150"></canvas>
-  </div>
-  <div class="qr">
-    <img src="qr.png" alt="QR code to open the portfolio submission" width="160" height="160">
-  </div>
+  <section class="card">
+    <h2>Performance Charts</h2>
+    <div class="chart-wrap"><canvas id="stockChart" height="150"></canvas></div>
+    <p class="small">Axes labeled with units for clarity; toggle series via legend.</p>
+  </section>
+  <section class="card">
+    <h2>Submit via QR</h2>
+    <p>Scan to open the portfolio submission endpoint on your phone.</p>
+    <div class="qr"><img alt="QR code to Apps Script" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk%2Fexec" width="200" height="200"></div>
+    <p class="small"><a href="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec" target="_blank">Open submission URL</a></p>
+  </section>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
-<script>
-(async function(){
-  const res = await fetch('stocks.json');
-  const data = await res.json();
-  const ctx = document.getElementById('stockChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.labels,
-      datasets: Object.entries(data.prices).map(([name,series]) => ({
-        label: name, data: series, borderWidth: 2, fill: false, tension: .2
-      }))
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: '#e6e6e6' } },
-        title: { display: true, text: 'Stock Prices', color: '#e6e6e6' }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Time (months)' }, ticks: { color: '#e6e6e6' }, grid: { color: '#333' } },
-        y: { title: { display: true, text: 'Price ($)' }, ticks: { color: '#e6e6e6' }, grid: { color: '#333' } }
-      }
-    }
-  });
-})();
-</script>
-</body>
-</html>
+</body></html>
