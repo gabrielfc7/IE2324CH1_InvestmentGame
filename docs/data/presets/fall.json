@@ -1,42 +1,11 @@
-[
-  {
-    "month": "Aug",
-    "factors": {
-      "SNACK": 1.1,
-      "MEDIA": 1.15,
-      "COFFEE": 1.05
-    }
-  },
-  {
-    "month": "Sep",
-    "factors": {
-      "SNACK": 0.7,
-      "TSHIRT": 0.8,
-      "VRBOOTH": 0.85
-    }
-  },
-  {
-    "month": "Oct",
-    "factors": {
-      "TUTOR": 1.4,
-      "PRINT": 1.2,
-      "COFFEE": 1.1
-    }
-  },
-  {
-    "month": "Nov",
-    "factors": {
-      "SNACK": 1.6,
-      "TSHIRT": 1.4,
-      "VRBOOTH": 1.3
-    }
-  },
-  {
-    "month": "Dec",
-    "factors": {
-      "TUTOR": 1.5,
-      "COFFEE": 1.2,
-      "MEDIA": 1.1
-    }
-  }
-]
+{
+  "term": "Fall",
+  "budget": 10000,
+  "symbols": [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN"
+  ],
+  "startCash": 10000
+}

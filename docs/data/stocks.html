@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stocks</title>
+  <link rel="stylesheet" href="ttu-dark.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header>
+  <h1>Stock Performance</h1>
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="invest-portfolio.html">Portfolio</a>
+    <a href="stocks.html">Stocks</a>
+    <a href="dashboard-portfolio.html">Dashboard</a>
+  </nav>
+</header>
+<main>
+  <div class="chart-wrap">
+    <canvas id="stockChart" height="150"></canvas>
+  </div>
+  <div class="qr">
+    <img src="qr.png" alt="QR code to open the portfolio submission" width="160" height="160">
+  </div>
+</main>
+<footer>© 2025 IE 2324 · TTU</footer>
+<script>
+(async function(){
+  const res = await fetch('stocks.json');
+  const data = await res.json();
+  const ctx = document.getElementById('stockChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: Object.entries(data.prices).map(([name,series]) => ({
+        label: name, data: series, borderWidth: 2, fill: false, tension: .2
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#e6e6e6' } },
+        title: { display: true, text: 'Stock Prices', color: '#e6e6e6' }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Time (months)' }, ticks: { color: '#e6e6e6' }, grid: { color: '#333' } },
+        y: { title: { display: true, text: 'Price ($)' }, ticks: { color: '#e6e6e6' }, grid: { color: '#333' } }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Investment Game · Portfolio</title>
+  <link rel="stylesheet" href="ttu-dark.css" />
+  <script defer>
+    const state = { stockA: 0, stockB: 0 };
+    function updateShares(key, delta){
+      state[key] = Math.max(0, state[key] + delta);
+      document.getElementById(key+"Count").textContent = state[key];
+      document.getElementById("input_"+key).value = state[key];
+    }
+    function preventKeys(e){ e.preventDefault(); return false; }
+    function init(){
+      ["stockA","stockB"].forEach(k=>updateShares(k,0));
+      document.querySelectorAll("input[type=number]").forEach(inp=>{
+        inp.setAttribute("readonly", "readonly");
+        inp.addEventListener("keydown", preventKeys);
+      });
+    }
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</head>
+<body>
+<header>
+  <h1>Manage Portfolio</h1>
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="invest-portfolio.html">Portfolio</a>
+    <a href="stocks.html">Stocks</a>
+    <a href="dashboard-portfolio.html">Dashboard</a>
+  </nav>
+</header>
+<main>
+  <div class="container">
+    <h2>Buy & Sell (Whole Shares Only)</h2>
+    <form id="portfolioForm" method="POST" action="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec">
+      <div class="row">
+        <label>Stock A</label>
+        <button class="btn" type="button" onclick="updateShares('stockA', -1)">−</button>
+        <div id="stockACount" class="counter">0</div>
+        <button class="btn" type="button" onclick="updateShares('stockA', +1)">+</button>
+        <input id="input_stockA" name="stockA" type="number" value="0" min="0" step="1" style="display:none" />
+      </div>
+      <div class="row">
+        <label>Stock B</label>
+        <button class="btn" type="button" onclick="updateShares('stockB', -1)">−</button>
+        <div id="stockBCount" class="counter">0</div>
+        <button class="btn" type="button" onclick="updateShares('stockB', +1)">+</button>
+        <input id="input_stockB" name="stockB" type="number" value="0" min="0" step="1" style="display:none" />
+      </div>
+      <hr/>
+      <button class="btn" type="submit">Submit Portfolio</button>
+      <p class="small">If submission fails with a network error, verify your Apps Script deployment access is "Anyone with the link".</p>
+    </form>
+  </div>
+</main>
+<footer>© 2025 IE 2324 · TTU</footer>
+</body>
+</html>

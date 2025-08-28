@@ -6,6 +6,23 @@
   <title>Portfolio Dashboard — IE2324</title>
   <link rel="stylesheet" href="./ttu-dark.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    .grid-klip{display:grid;grid-template-columns:2fr 1.3fr;gap:16px}
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpi{background:#12192b;border:1px solid #202637;border-radius:14px;padding:12px 14px}
+    .kpi .val{font-size:26px;font-weight:900}
+    .kpi .lbl{font-size:12px;color:#9aa4b1}
+    .table{width:100%;border-collapse:collapse}
+    .table th,.table td{padding:8px 10px;border-bottom:1px dashed #202637;text-align:left;font-size:13px}
+    .table th{color:#b7bfd0;font-weight:700}
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid #202637;background:#121a2b;font-size:11px}
+    .pill{padding:3px 8px;border-radius:999px;background:#182238;color:#cdd5e6;font-size:11px;border:1px solid #202637}
+    .mini{height:140px}
+    .no-scroll{height:calc(100vh - 120px);display:grid;grid-template-rows:auto auto 1fr;gap:14px}
+    .two-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .tiny{font-size:12px;color:#9aa4b1}
+  </style>
 </head>
 <body>
 <header class="header">
@@ -14,223 +31,46 @@
     <h1 style="margin:0">Dashboard</h1>
   </div>
 </header>
-
 <main class="container no-scroll">
-  <!-- Controls -->
   <section class="card">
     <div class="controls">
-      <label class="label" for="semester">Semester</label>
+      <label for="semester">Semester</label>
       <select id="semester"><option>FALL</option><option>SPRING</option></select>
-
-      <label class="label" for="section">Section</label>
+      <label for="section">Section</label>
       <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
-
-      <button class="btn" id="loadPreset">Load Preset</button>
-      <button class="btn ghost" id="randomTimeline">Random Events</button>
-      <a class="btn ghost" href="./stocks.html" target="_blank">Stock Info</a>
     </div>
   </section>
-
-  <!-- 2-column dashboard (no scroll) -->
-  <section class="grid dash" style="min-height:0">
-    <div class="dash-main">
-      <div class="card panel">
-        <h2>Class Holdings by Stock</h2>
-        <canvas id="holdingsChart"></canvas>
-        <p id="submissionsTotal" class="footer"></p>
-      </div>
-      <div class="card panel">
-        <h2>Price Path (5 months)</h2>
-        <canvas id="priceChart"></canvas>
-        <p class="footer">Events drive hidden multipliers per stock.</p>
-      </div>
+  <section class="kpi-row">
+    <div class="kpi"><div class="lbl">Portfolios Submitted</div><div id="kpiSubmitted" class="val">0</div></div>
+    <div class="kpi"><div class="lbl">Unique Students</div><div id="kpiStudents" class="val">0</div></div>
+    <div class="kpi"><div class="lbl">Avg Stocks / Portfolio</div><div id="kpiAvgPicks" class="val">0.0</div></div>
+    <div class="kpi"><div class="lbl">Total $ Allocated</div><div id="kpiAllocated" class="val">$0</div></div>
+  </section>
+  <section class="grid-klip">
+    <div>
+      <section class="card panel">
+        <h2>Recent Submissions</h2>
+        <table class="table" id="submissionsTable"><thead><tr><th>Name</th><th>UID</th><th>Stocks</th><th>Cash</th><th>Time</th></tr></thead><tbody></tbody></table>
+      </section>
+      <section class="card panel">
+        <h2>Holdings by Stock</h2>
+        <canvas id="holdingsChart" class="mini"></canvas>
+      </section>
     </div>
-
-    <aside class="sidebar">
-      <div class="card panel scroll">
+    <div>
+      <section class="card panel">
+        <h2>Portfolio Mix by Sector</h2>
+        <div class="two-panels">
+          <table class="table" id="sectorTable"><thead><tr><th>Sector</th><th>Invested $</th><th>%</th></tr></thead><tbody></tbody></table>
+          <canvas id="sectorPie" class="mini"></canvas>
+        </div>
+      </section>
+      <section class="card panel">
         <h2>Top 10 Leaderboard</h2>
         <ol id="leaders" class="list"></ol>
-      </div>
-
-      <div class="card panel scroll">
-        <h2>Timeline Events</h2>
-        <div id="monthsTabs" class="event-list" style="margin-bottom:10px"></div>
-        <div id="eventChips" class="event-list"></div>
-        <p class="footer">Click events to toggle for the selected month.</p>
-      </div>
-    </aside>
+      </section>
+    </div>
   </section>
 </main>
-
-<script>
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
-
-let stocks=[], prices={};
-const FALL_MONTHS=['Aug','Sep','Oct','Nov','Dec'];
-const SPRING_MONTHS=['Jan','Feb','Mar','Apr','May'];
-let months = FALL_MONTHS;
-
-// Event library (hidden multipliers)
-const EVENTS = [
-  { id:'WELCOME', name:'Welcome Week surge', factors:{ SNACK:1.10, MEDIA:1.15, COFFEE:1.05 }},
-  { id:'RAINOUT', name:'Rainout', factors:{ SNACK:0.70, TSHIRT:0.80, VRBOOTH:0.85 }},
-  { id:'MIDTERMS', name:'Midterms week', factors:{ TUTOR:1.40, PRINT:1.20, COFFEE:1.10 }},
-  { id:'SOLDOUT', name:'Sold-out game', factors:{ SNACK:1.60, TSHIRT:1.40, VRBOOTH:1.30 }},
-  { id:'FINALS', name:'Finals week', factors:{ TUTOR:1.50, COFFEE:1.20, MEDIA:1.10 }},
-  { id:'TORTE', name:'Tortilla shortage — game canceled', factors:{ SNACK:0.60, TSHIRT:0.75, VRBOOTH:0.80 }},
-  { id:'DUST', name:'Dust storm week', factors:{ RIDESH:1.15, COFFEE:1.08 }},
-  { id:'GAS', name:'Gas line shutdown (no class)', factors:{ COFFEE:0.7, TUTOR:0.8 }},
-  { id:'MAHOMES', name:'Patrick Mahomes visit', factors:{ MEDIA:1.35, VRBOOTH:1.25, SNACK:1.15 }},
-  { id:'LICENSE', name:'Licensing fee increase', factors:{ TSHIRT:0.85 }}
-];
-
-let timelineSelections = []; // array per month of event ids
-let activeMonthIndex = 0;
-
-function monthsForSemester(sem){ return sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS; }
-function semester(){ return document.getElementById('semester').value.toUpperCase(); }
-function section(){ return document.getElementById('section').value.toUpperCase(); }
-
-fetch('./stocks.json').then(r=>r.json()).then(list=>{
-  stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price]));
-  init();
-});
-
-function init(){
-  setupControls();
-  resetTimeline();
-  buildMonthsTabs();
-  buildEventChips();
-  refreshAll();
-}
-
-function setupControls(){
-  document.getElementById('semester').onchange = ()=>{ months = monthsForSemester(semester()); resetTimeline(); buildMonthsTabs(); buildEventChips(); refreshAll(); };
-  document.getElementById('section').onchange = refreshAll;
-  document.getElementById('loadPreset').onclick = async ()=>{
-    const url = semester()==='SPRING'? './data/presets/spring.json' : './data/presets/fall.json';
-    const preset = await fetch(url).then(r=>r.json());
-    resetTimeline();
-    const map = { 'Aug':'WELCOME', 'Sep':'RAINOUT', 'Oct':'MIDTERMS', 'Nov':'SOLDOUT', 'Dec':'FINALS',
-                  'Jan':'WELCOME', 'Feb':'DUST', 'Mar':'MIDTERMS', 'Apr':'SOLDOUT', 'May':'FINALS' };
-    preset.forEach((m,i)=>{ const e = map[m.month]; if(e){ timelineSelections[i] = [e]; }});
-    activeMonthIndex=0; buildMonthsTabs(); buildEventChips(); refreshAll();
-  };
-  document.getElementById('randomTimeline').onclick = ()=>{
-    resetTimeline();
-    timelineSelections = timelineSelections.map(()=> {
-      const pool = [...EVENTS].sort(()=>Math.random()-0.5).slice(0, Math.random()>0.5?2:1);
-      return pool.map(p=>p.id);
-    });
-    buildEventChips(); refreshAll();
-  };
-}
-
-function resetTimeline(){
-  months = monthsForSemester(semester());
-  timelineSelections = months.map(()=>[]);
-  activeMonthIndex = 0;
-}
-
-function buildMonthsTabs(){
-  const root=document.getElementById('monthsTabs'); root.innerHTML='';
-  months.forEach((m,i)=>{
-    const el=document.createElement('button');
-    el.className = 'event-chip' + (i===activeMonthIndex?' active':'');
-    el.textContent = m;
-    el.onclick = ()=>{ activeMonthIndex=i; buildMonthsTabs(); buildEventChips(); };
-    root.appendChild(el);
-  });
-}
-
-function buildEventChips(){
-  const root=document.getElementById('eventChips'); root.innerHTML='';
-  const selected = new Set(timelineSelections[activeMonthIndex]);
-  EVENTS.forEach(ev=>{
-    const chip=document.createElement('button');
-    chip.className='event-chip'+(selected.has(ev.id)?' active':'');
-    chip.innerHTML = `<span class="dot" style="background:${selected.has(ev.id)?'#e50914':'#526'}"></span> ${ev.name}`;
-    chip.onclick=()=>{ 
-      if(selected.has(ev.id)) selected.delete(ev.id); else selected.add(ev.id);
-      timelineSelections[activeMonthIndex] = [...selected];
-      chip.classList.toggle('active');
-      refreshAll();
-    };
-    root.appendChild(chip);
-  });
-}
-
-function numericTimeline(){
-  return months.map((month, i)=>{
-    const picks = timelineSelections[i] || [];
-    const factors = {};
-    picks.forEach(pid=>{
-      const ev = EVENTS.find(e=>e.id===pid);
-      if(!ev) return;
-      Object.entries(ev.factors).forEach(([sid,mult])=>{
-        factors[sid] = (factors[sid]||1) * mult;
-      });
-    });
-    return { month, factors };
-  });
-}
-
-const holdingsChart = new Chart(
-  document.getElementById('holdingsChart').getContext('2d'),
-  {type:'bar',
-   data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]},
-   options:{responsive:true, maintainAspectRatio:false, animation:false,
-     plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
-});
-const priceChart = new Chart(
-  document.getElementById('priceChart').getContext('2d'),
-  {type:'line',
-   data:{labels:[],datasets:[]},
-   options:{responsive:true, maintainAspectRatio:false, animation:false,
-     plugins:{legend:{display:false}}}
-   }
-);
-window.addEventListener('resize', ()=>{ holdingsChart.resize(); priceChart.resize(); });
-
-async function refreshAll(){
-  await refreshHoldings();
-  await refreshLeaderboard();
-  refreshPriceChart();
-}
-
-async function refreshHoldings(){
-  const url = `${SCRIPT_URL}?mode=tally&semester=${encodeURIComponent(semester())}&section=${encodeURIComponent(section())}`;
-  const j = await fetch(url).then(r=>r.json()).catch(()=>({tally:{},total:0}));
-  document.getElementById('submissionsTotal').textContent = `${j.total||0} portfolios submitted`;
-  const labels = stocks.map(s=>s.name);
-  const data = stocks.map(s=> (j.tally && j.tally[s.id] ? j.tally[s.id].invested : 0));
-  holdingsChart.data.labels = labels; holdingsChart.data.datasets[0].data = data; holdingsChart.update();
-}
-
-function computePath(stockId, base){
-  let p = base; const arr=[];
-  const tl = numericTimeline();
-  tl.forEach(t=>{ p *= (t.factors[stockId] || 1); arr.push(p); });
-  return arr;
-}
-
-function refreshPriceChart(){
-  priceChart.data.labels = months;
-  priceChart.data.datasets = stocks.map(s=>({ label:s.name, data: computePath(s.id, s.price), fill:false }));
-  priceChart.update();
-}
-
-async function refreshLeaderboard(){
-  const basePrices = Object.fromEntries(stocks.map(s=>[s.id, s.price]));
-  const url = `${SCRIPT_URL}?mode=leaderboard&semester=${encodeURIComponent(semester())}&section=${encodeURIComponent(section())}&prices=${encodeURIComponent(JSON.stringify(basePrices))}&timeline=${encodeURIComponent(JSON.stringify(numericTimeline()))}`;
-  const j = await fetch(url).then(r=>r.json()).catch(()=>({leaders:[]}));
-  const ol = document.getElementById('leaders'); ol.innerHTML='';
-  (j.leaders||[]).forEach((u,i)=>{
-    const li=document.createElement('li');
-    li.innerHTML = `<span class="rank">#${i+1}</span><span class="uid">${u.uid}</span><span>$${u.value.toFixed(2)}</span>`;
-    ol.appendChild(li);
-  });
-}
-</script>
 </body>
 </html>

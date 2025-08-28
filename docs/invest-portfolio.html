@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Build Your Portfolio</title>
   <link rel="stylesheet" href="./ttu-dark.css"/>
+  <style>
+    .qty{display:flex;gap:8px;align-items:center}
+    .qty button{padding:6px 10px;border-radius:10px;border:1px solid #2a344b;background:#0e1424;color:#e8ecf4;font-weight:800;cursor:pointer}
+    .qty input{width:60px;text-align:center;background:#0e1424;color:#e8ecf4;border:1px solid #2a344b;border-radius:8px;padding:6px}
+    .grid.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .muted{color:#9aa4b1}
+  </style>
 </head>
 <body>
 <header class="header">
@@ -38,34 +45,72 @@
 </main>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec'; // <-- set this
 const BUDGET = 100;
+const MAX_PICKS = 5;
 const uid = localStorage.getItem('ie2324_uid') || (function(){const v='uid_'+Math.random().toString(36).slice(2); localStorage.setItem('ie2324_uid',v); return v;})();
 const q = new URL(location.href).searchParams; ['section','semester'].forEach(k=>{ const v=q.get(k); if(v) setTimeout(()=>{ document.getElementById(k).value=v.toUpperCase(); },0); });
 
-let stocks=[]; let prices={};
-fetch('./stocks.json').then(r=>r.json()).then(list=>{ stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price])); renderStocks(); updateBudget(); });
+let stocks=[]; let prices={}; let shares={}; // shares per stock id
+
+fetch('./stocks.json').then(r=>r.json()).then(list=>{
+  stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price]));
+  shares=Object.fromEntries(stocks.map(s=>[s.id, 0]));
+  renderStocks(); updateBudget();
+});
 
 function renderStocks(){
   const root=document.getElementById('stocks'); root.innerHTML='';
   stocks.forEach(s=>{
     const el=document.createElement('div'); el.className='card';
-    el.innerHTML=`<h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)}/share</span></h2>
-    <p>${s.desc||''}</p>
-    <label class='label'>Amount ($)</label>
-    <input type='number' min='0' step='1' value='0' data-id='${s.id}' style='width:140px'>`;
-    el.querySelector('input').addEventListener('input', updateBudget);
+    el.innerHTML=`
+      <h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)}/share</span></h2>
+      <p class="muted">${s.desc||''}</p>
+      <div class="qty">
+        <button data-id="${s.id}" data-d="-1">−</button>
+        <input id="qty_${s.id}" value="0" readonly>
+        <button data-id="${s.id}" data-d="1">+</button>
+      </div>
+      <p class="muted">Subtotal: $<span id="sub_${s.id}">0.00</span></p>`;
     root.appendChild(el);
+  });
+  root.addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    const id=e.target.getAttribute('data-id'); const d=Number(e.target.getAttribute('data-d'));
+    adjustShares(id, d);
   });
 }
 
+function adjustShares(id, delta){
+  const current = shares[id];
+  if(delta<0 && current===0) return;
+  if(delta>0){
+    // enforce budget and max picks
+    const spent = totalSpent();
+    const price = prices[id];
+    const newSpent = spent + price;
+    const picks = Object.values(shares).filter(v=>v>0).length + (current===0?1:0);
+    if(newSpent > BUDGET + 1e-6) return;
+    if(picks > MAX_PICKS) return;
+  }
+  shares[id] = Math.max(0, current + delta);
+  document.getElementById('qty_'+id).value = shares[id];
+  document.getElementById('sub_'+id).textContent = (shares[id]*prices[id]).toFixed(2);
+  updateBudget();
+}
+
+function totalSpent(){
+  return Object.keys(shares).reduce((sum,id)=> sum + shares[id]*prices[id], 0);
+}
+
 function updateBudget(){
-  const inputs=[...document.querySelectorAll('input[data-id]')];
-  let spent=0; let picks=0;
-  inputs.forEach(inp=>{ const amt=Number(inp.value||0); if(amt>0){ picks++; spent+=amt; }});
-  const remain = BUDGET - spent; const over = remain< -1e-6; const tooMany = picks>5;
+  const spent = totalSpent();
+  const picks = Object.values(shares).filter(v=>v>0).length;
+  const remain = BUDGET - spent;
+  const over = remain < -1e-6;
+  const tooMany = picks>MAX_PICKS;
   const b = document.getElementById('budget');
-  b.textContent = `Budget remaining: $${Math.max(0,remain).toFixed(2)} • Picks: ${picks}/5`;
+  b.textContent = `Budget remaining: $${Math.max(0,remain).toFixed(2)} • Picks: ${picks}/${MAX_PICKS}`;
   b.style.borderColor = (over||tooMany)?'#ff3b30':'#23262d';
   document.getElementById('submit').disabled = over || tooMany || picks===0 || !document.getElementById('name').value.trim();
 }
@@ -76,26 +121,25 @@ document.getElementById('submit').onclick = async ()=>{
   if(!name){ alert('Please enter your name.'); return; }
   const section = document.getElementById('section').value.toUpperCase();
   const semester = document.getElementById('semester').value.toUpperCase();
-  const inputs=[...document.querySelectorAll('input[data-id]')];
-  let spent=0; let allocations=[];
-  inputs.forEach(inp=>{
-    const id=inp.dataset.id; const amt=Number(inp.value||0);
-    if(amt>0){
-      spent+=amt;
-      const price = prices[id];
-      const shares = +(amt / price).toFixed(6);
-      allocations.push({stockId:id, amount:amt, price, shares});
-    }
-  });
-  if(allocations.length>5){ alert('Choose at most 5 stocks.'); return; }
-  if(spent> BUDGET + 1e-6){ alert('Over budget. Reduce amounts.'); return; }
-  const cash = Math.max(0, BUDGET - spent);
+
+  const allocations = Object.keys(shares).filter(id=>shares[id]>0).map(id=>({
+    stockId:id, shares:shares[id], price:prices[id], amount: +(shares[id]*prices[id]).toFixed(2)
+  }));
+
+  if(allocations.length>MAX_PICKS){ alert('Choose at most 5 stocks.'); return; }
+  const cash = Math.max(0, BUDGET - allocations.reduce((s,a)=>s+a.amount,0));
+
   try{
-    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ semester, section, name, uid, allocations, cash })});
+    const res = await fetch(SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ semester, section, name, uid, allocations, cash })
+    });
     const j = await res.json();
-    document.getElementById('msg').textContent = j.ok? 'Submitted! You can close this tab.' : 'Error: '+j.error;
-  }catch(e){ document.getElementById('msg').textContent = 'Network error. Try again.'; }
+    document.getElementById('msg').textContent = j.ok? 'Submitted! You can close this tab.' : ('Error: '+j.error);
+  }catch(e){
+    document.getElementById('msg').textContent = 'Network error. Check SCRIPT_URL and deployment permissions.';
+  }
 };
 </script>
 </body>
