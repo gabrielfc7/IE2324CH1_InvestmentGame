@@ -146,3 +146,35 @@ function getLeaderboard_(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+// mode=export_csv => download CSV of submissions
+function exportCsv_(semester, section) {
+  var rows = readRows_(semester, section);
+  var header = ["Timestamp","Semester","Section","Name","UID","AllocationsJSON","Cash"];
+  var csv = [header.join(",")];
+  rows.forEach(function(r){
+    var line = [
+      new Date(r.ts).toISOString(),
+      r.semester, r.section, '"' + r.name.replace(/"/g,'""') + '"', r.uid,
+      '"' + JSON.stringify(r.allocations).replace(/"/g,'""') + '"',
+      r.cash
+    ].join(",");
+    csv.push(line);
+  });
+  return ContentService.createTextOutput(csv.join("\n"))
+    .setMimeType(ContentService.MimeType.CSV);
+}
+
+// mode=reset => clear submissions (keep header). Requires ?token=YOUR_TOKEN
+function reset_(token) {
+  var ADMIN_TOKEN = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN') || 'CHANGE_ME';
+  if (token !== ADMIN_TOKEN) {
+    return ContentService.createTextOutput(JSON.stringify({ ok:false, error:"Invalid token" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  var sh = getSheet_("Submissions");
+  var last = sh.getLastRow();
+  if (last > 1) sh.deleteRows(2, last-1);
+  return ContentService.createTextOutput(JSON.stringify({ ok:true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}

@@ -13,7 +13,7 @@
       const sem = document.getElementById('sem').value;
       const sec = document.getElementById('sec').value;
       const link = 'invest-portfolio.html?semester='+sem+'&section='+sec;
-      document.getElementById('qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=0&data='+encodeURIComponent(link);
+      document.getElementById('qr').src = 'qr/' + sem + '_' + sec + '.png';
       document.getElementById('deep').textContent = link; document.getElementById('deep').href = link;
     }
     window.addEventListener('DOMContentLoaded', update);
@@ -37,9 +37,28 @@
   <h2>Big QR</h2>
   <p class="big">Select Semester and Section, then project this screen in class.</p>
   <div class="row"><label>Semester</label><select id="sem" onchange="update()"><option>FALL</option><option>SPRING</option></select>
-  <label>Section</label><select id="sec" onchange="update()"><option>001</option><option>002</option><option>003</option><option>D01</option></select></div>
+  <label>Section</label><select id="sec" onchange="update()"><option>001</option>
+<option>002</option>
+<option>003</option>
+<option>004</option>
+<option>005</option>
+<option>006</option>
+<option>007</option>
+<option>008</option>
+<option>009</option>
+<option>010</option>
+<option>D01</option>
+<option>D02</option>
+<option>D03</option>
+<option>D04</option>
+<option>D05</option>
+<option>D06</option>
+<option>D07</option>
+<option>D08</option>
+<option>D09</option>
+<option>D10</option></select></div>
   <div class="qr"><img id="qr" width="320" height="320" alt="QR"></div>
-  <p class="small">Deep link: <a id="deep" href="#" target="_blank"></a></p>
+  <p class="small">Deep link: <a id="deep" href="#" target="_blank"></a> &nbsp; <span class="small">(QR generated locally)</span></p>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

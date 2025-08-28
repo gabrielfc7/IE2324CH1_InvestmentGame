@@ -23,7 +23,7 @@
       const sec = document.getElementById('secSel').value;
       const link = 'invest-portfolio.html?semester='+sem+'&section='+sec;
       const img = document.getElementById('qrimg');
-      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data='+encodeURIComponent(link);
+      img.src = 'qr/' + document.getElementById('semSel').value + '_' + document.getElementById('secSel').value + '.png';
       document.getElementById('deepLink').href = link;
       document.getElementById('deepLink').textContent = link;
     }
@@ -81,10 +81,29 @@
       <label>Semester</label>
       <select id="semSel"><option>FALL</option><option>SPRING</option></select>
       <label>Section</label>
-      <select id="secSel"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+      <select id="secSel"><option>001</option>
+<option>002</option>
+<option>003</option>
+<option>004</option>
+<option>005</option>
+<option>006</option>
+<option>007</option>
+<option>008</option>
+<option>009</option>
+<option>010</option>
+<option>D01</option>
+<option>D02</option>
+<option>D03</option>
+<option>D04</option>
+<option>D05</option>
+<option>D06</option>
+<option>D07</option>
+<option>D08</option>
+<option>D09</option>
+<option>D10</option></select>
     </div>
     <div class="qr"><img id="qrimg" width="200" height="200" alt="QR to invest page"></div>
-    <p class="small">Deep link: <a id="deepLink" href="#" target="_blank"></a></p>
+    <p class="small">Deep link: <a id="deepLink" href="#" target="_blank"></a> &nbsp; <span class="small">(QR generated locally)</span></p>
   </section>
 
   <section class="card">

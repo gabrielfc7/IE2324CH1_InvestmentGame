@@ -18,6 +18,14 @@
       document.getElementById('loadPreset').addEventListener('click', loadPreset);
       document.getElementById('randomEvents').addEventListener('click', randomizeEvents);
       buildEventChips('FALL');
+      document.getElementById('exportCsv').addEventListener('click', ()=>{
+        const s=document.getElementById('semester').value; const c=document.getElementById('section').value; window.open(SCRIPT_URL + '?mode=export_csv&semester='+s+'&section='+c, '_blank');
+      });
+      document.getElementById('resetData').addEventListener('click', async ()=>{
+        const tok = document.getElementById('admintoken').value.trim(); if(!tok) return alert('Enter admin token');
+        const r = await fetch(SCRIPT_URL + '?mode=reset&token='+encodeURIComponent(tok)); const j = await r.json();
+        if(j.ok){ alert('Reset complete'); onFilter(); } else { alert('Reset failed: '+j.error); }
+      });
       onFilter();
     }
 
@@ -176,6 +184,9 @@
       <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
       <button id="loadPreset" class="btn secondary">Load Preset</button>
       <button id="randomEvents" class="btn">Random Events</button>
+      <label style="margin-left:12px">Admin token</label><input id="admintoken" placeholder="set in Script Properties">
+      <button id="exportCsv" class="btn secondary">Export CSV</button>
+      <button id="resetData" class="btn" style="background:#ef4444">Reset Data</button>
     </div>
   </section>
 
