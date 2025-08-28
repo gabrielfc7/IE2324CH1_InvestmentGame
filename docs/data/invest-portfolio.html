@@ -5,27 +5,108 @@
   <title>Portfolio · IE 2324 Investment Game</title>
   <link rel="stylesheet" href="ttu-dark.css">
   <script>
-    const TICKERS = ['AAPL', 'MSFT', 'TSLA', 'NVDA', 'KO'];
-    const LAST = {"AAPL": 162, "MSFT": 318, "TSLA": 220, "NVDA": 130, "KO": 62};
-    const state = Object.fromEntries(TICKERS.map(t=>[t,0]));
-    function setCount(t, v){
-      state[t] = Math.max(0, Math.floor(v));
-      document.getElementById('count_'+t).textContent = state[t];
-      document.getElementById('input_'+t).value = state[t];
-      updateTotals();
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziZR_L6C2A-QNwLADPrtQS-cOT5SY-vA1ZWWz5bYfbkqQH8EivfcotMPm3lTuF_QP5/exec";
+    const STOCKS = {"AAPL": {"name": "Matador Tech (AAPL)", "price": 25, "sector": "Tech", "desc": "Flagship consumer devices and services."}, "MSFT": {"name": "Raider Cloud (MSFT)", "price": 20, "sector": "Tech", "desc": "Productivity and cloud."}, "TSLA": {"name": "Wind West EV (TSLA)", "price": 18, "sector": "Industrial", "desc": "Electric vehicles and energy storage."}, "NVDA": {"name": "GPU Forge (NVDA)", "price": 15, "sector": "Tech", "desc": "AI chips and platforms."}, "KO": {"name": "Red Cup Beverages (KO)", "price": 10, "sector": "Consumer", "desc": "Beverages and snacks."}, "TTUR": {"name": "TTU Utilities", "price": 12, "sector": "Utilities", "desc": "Campus utilities and energy."}, "REDR": {"name": "Raider Retail", "price": 9, "sector": "Retail", "desc": "Campus and local retail."}, "RAID": {"name": "Raider Defense", "price": 14, "sector": "Industrial", "desc": "Security and aerospace."}, "MESA": {"name": "Llano Health", "price": 11, "sector": "Healthcare", "desc": "Regional healthcare network."}, "TUND": {"name": "High Plains Logistics", "price": 13, "sector": "Logistics", "desc": "Distribution and transport."}};
+    const ORDER = ["AAPL", "MSFT", "TSLA", "NVDA", "KO", "TTUR", "REDR", "RAID", "MESA", "TUND"];
+    const BUDGET = 100;
+    const MAX_PICKS = 5;
+
+    function uid(){
+      let u = localStorage.getItem('ie2324_uid');
+      if(!u){ u = Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('ie2324_uid',u); }
+      return u;
     }
-    function bump(t, d){ setCount(t, state[t] + d); }
-    function updateTotals(){ 
-      let cost = 0; TICKERS.forEach(t => cost += (state[t]||0) * (LAST[t]||0));
-      document.getElementById('estCost').textContent = '$' + cost.toFixed(2);
+
+    function getParams(){
+      const sp = new URLSearchParams(location.search);
+      return {
+        semester: (sp.get('semester')||'').toUpperCase(),
+        section: (sp.get('section')||'').toUpperCase()
+      };
     }
-    function init(){
-      TICKERS.forEach(t=>setCount(t,0));
-      document.getElementById('portfolioForm').addEventListener('submit', function(){ 
-        document.getElementById('status').textContent = 'Submitting…';
-        document.getElementById('status').className = 'notice';
-        setTimeout(()=>{ document.getElementById('status').textContent = 'Submitted! You can close this message.'; document.getElementById('status').className='success'; }, 1200);
+
+    const state = { shares: Object.fromEntries(ORDER.map(s=>[s,0])), name:'', section:'', semester:'' };
+
+    function setCount(id, val){
+      val = Math.max(0, Math.floor(val));
+      state.shares[id] = val;
+      document.getElementById('count_'+id).textContent = val;
+      const sub = val * (STOCKS[id].price || 0);
+      document.getElementById('sub_'+id).textContent = sub.toFixed(2);
+      recalc();
+    }
+    function bump(id, d){ setCount(id, (state.shares[id]||0) + d); }
+
+    function recalc(){
+      let spent = 0; let picks = 0;
+      ORDER.forEach(id=>{ 
+        const v = state.shares[id]||0; 
+        if(v>0){ picks++; }
+        spent += v * (STOCKS[id].price||0);
       });
+      const remaining = Math.max(0, BUDGET - spent);
+      document.getElementById('spent').textContent = '$'+spent.toFixed(2);
+      document.getElementById('remaining').textContent = '$'+remaining.toFixed(2);
+      document.getElementById('picks').textContent = picks + ' / ' + MAX_PICKS;
+      const valid = state.name.trim() && state.section && state.semester && spent <= BUDGET && picks>0 && picks<=MAX_PICKS;
+      document.getElementById('submitBtn').disabled = !valid;
+    }
+
+    function onMetaChange(){
+      state.name = document.getElementById('name').value;
+      state.section = document.getElementById('section').value;
+      state.semester = document.getElementById('semester').value;
+      recalc();
+    }
+
+    function init(){
+      const p = getParams();
+      if(p.semester) document.getElementById('semester').value = p.semester;
+      if(p.section) document.getElementById('section').value = p.section;
+      onMetaChange();
+      ORDER.forEach(id=>setCount(id,0));
+      document.getElementById('portfolioForm').addEventListener('submit', submitForm);
+    }
+
+    function payload(){
+      const allocations = [];
+      ORDER.forEach(id=>{ const sh = state.shares[id]||0; if(sh>0) allocations.push({ stockId:id, shares:sh, price:STOCKS[id].price, amount: sh*STOCKS[id].price }); });
+      let spent = allocations.reduce((a,b)=>a+b.amount,0);
+      return {
+        semester: state.semester,
+        section: state.section,
+        name: state.name.trim(),
+        uid: uid(),
+        allocations: allocations,
+        cash: Math.max(0, BUDGET - spent)
+      };
+    }
+
+    function submitForm(ev){
+      ev.preventDefault();
+      const pay = payload();
+      // Build a traditional form POST (x-www-form-urlencoded) to avoid CORS issues
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SCRIPT_URL;
+      form.target = 'hidden_iframe';
+      for (const [k,v] of Object.entries({
+        semester: pay.semester,
+        section: pay.section,
+        name: pay.name,
+        uid: pay.uid,
+        allocations: JSON.stringify(pay.allocations),
+        cash: pay.cash.toFixed(2)
+      })) {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = k; inp.value = v;
+        form.appendChild(inp);
+      }
+      document.body.appendChild(form);
+      document.getElementById('status').textContent = 'Submitting...';
+      document.getElementById('status').className = 'notice';
+      form.submit();
+      setTimeout(()=>{ document.getElementById('status').textContent='Submitted!'; document.getElementById('status').className='success'; }, 1200);
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
@@ -40,94 +121,159 @@
       <a href="invest-portfolio.html" class="active">Portfolio</a>
       <a href="stocks.html" class="">Stocks</a>
       <a href="dashboard-portfolio.html" class="">Dashboard</a>
+      <a href="qr.html" class="">QR Screen</a>
     </nav>
   </div>
 </header>
 <main>
   <section class="card">
     <h2>Build Your Portfolio</h2>
-    <p class="notice">Use the +/- buttons to change whole shares. Typing is disabled.</p>
-    <form id="portfolioForm" method="POST" action="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec" target="hidden_iframe">
-      <div class="grid">
-        
-        <div class="card">
-          <h3>AAPL</h3>
-          <div class="row">
-            <button class="btn secondary" type="button" onclick="bump('AAPL',-1)">-</button>
-            <div id="count_AAPL" class="counter">0</div>
-            <button class="btn" type="button" onclick="bump('AAPL',+1)">+</button>
-          </div>
-          <input id="input_AAPL" name="AAPL" type="hidden" value="0">
-          <p class="small">Last price: ${LAST['AAPL'] || 0}</p>
+    <div class="grid">
+      <div class="card">
+        <label for="name">Name</label><br>
+        <input id="name" placeholder="First Last" oninput="onMetaChange()">
+        <div class="row">
+          <label for="section">Section</label>
+          <select id="section" onchange="onMetaChange()">
+            <option value="">Select...</option>
+            <option>001</option><option>002</option><option>003</option><option>D01</option>
+          </select>
         </div>
-    
-
-        <div class="card">
-          <h3>MSFT</h3>
-          <div class="row">
-            <button class="btn secondary" type="button" onclick="bump('MSFT',-1)">-</button>
-            <div id="count_MSFT" class="counter">0</div>
-            <button class="btn" type="button" onclick="bump('MSFT',+1)">+</button>
-          </div>
-          <input id="input_MSFT" name="MSFT" type="hidden" value="0">
-          <p class="small">Last price: ${LAST['MSFT'] || 0}</p>
+        <div class="row">
+          <label for="semester">Semester</label>
+          <select id="semester" onchange="onMetaChange()">
+            <option value="">Select...</option>
+            <option>FALL</option><option>SPRING</option>
+          </select>
         </div>
-    
-
-        <div class="card">
-          <h3>TSLA</h3>
-          <div class="row">
-            <button class="btn secondary" type="button" onclick="bump('TSLA',-1)">-</button>
-            <div id="count_TSLA" class="counter">0</div>
-            <button class="btn" type="button" onclick="bump('TSLA',+1)">+</button>
-          </div>
-          <input id="input_TSLA" name="TSLA" type="hidden" value="0">
-          <p class="small">Last price: ${LAST['TSLA'] || 0}</p>
+        <hr>
+        <div class="small">Budget: $100 · Picks: <span id="picks">0 / 5</span></div>
+        <div class="small">Spent: <span id="spent">$0.00</span> · Remaining: <span id="remaining">$100.00</span></div>
+        <div class="row"><button id="submitBtn" class="btn" disabled>Submit</button><span id="status" class="notice"></span></div>
+        <iframe name="hidden_iframe" style="display:none"></iframe>
+      </div>
+      
+      <div class='card'>
+        <h3>Matador Tech (AAPL)</h3>
+        <p class='small'>Tech · $25/share</p>
+        <p class='small'>Flagship consumer devices and services.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('AAPL',-1)">-</button>
+          <div id='count_AAPL' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('AAPL',+1)">+</button>
         </div>
+        <div class='small'>Subtotal: $<span id='sub_AAPL'>0.00</span></div>
+      </div>
     
-
-        <div class="card">
-          <h3>NVDA</h3>
-          <div class="row">
-            <button class="btn secondary" type="button" onclick="bump('NVDA',-1)">-</button>
-            <div id="count_NVDA" class="counter">0</div>
-            <button class="btn" type="button" onclick="bump('NVDA',+1)">+</button>
-          </div>
-          <input id="input_NVDA" name="NVDA" type="hidden" value="0">
-          <p class="small">Last price: ${LAST['NVDA'] || 0}</p>
+      <div class='card'>
+        <h3>Raider Cloud (MSFT)</h3>
+        <p class='small'>Tech · $20/share</p>
+        <p class='small'>Productivity and cloud.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('MSFT',-1)">-</button>
+          <div id='count_MSFT' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('MSFT',+1)">+</button>
         </div>
+        <div class='small'>Subtotal: $<span id='sub_MSFT'>0.00</span></div>
+      </div>
     
-
-        <div class="card">
-          <h3>KO</h3>
-          <div class="row">
-            <button class="btn secondary" type="button" onclick="bump('KO',-1)">-</button>
-            <div id="count_KO" class="counter">0</div>
-            <button class="btn" type="button" onclick="bump('KO',+1)">+</button>
-          </div>
-          <input id="input_KO" name="KO" type="hidden" value="0">
-          <p class="small">Last price: ${LAST['KO'] || 0}</p>
+      <div class='card'>
+        <h3>Wind West EV (TSLA)</h3>
+        <p class='small'>Industrial · $18/share</p>
+        <p class='small'>Electric vehicles and energy storage.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('TSLA',-1)">-</button>
+          <div id='count_TSLA' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('TSLA',+1)">+</button>
         </div>
+        <div class='small'>Subtotal: $<span id='sub_TSLA'>0.00</span></div>
+      </div>
     
+      <div class='card'>
+        <h3>GPU Forge (NVDA)</h3>
+        <p class='small'>Tech · $15/share</p>
+        <p class='small'>AI chips and platforms.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('NVDA',-1)">-</button>
+          <div id='count_NVDA' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('NVDA',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_NVDA'>0.00</span></div>
       </div>
-      <hr>
-      <div class="row">
-        <strong>Estimated cost:</strong> <span id="estCost">$0.00</span>
+    
+      <div class='card'>
+        <h3>Red Cup Beverages (KO)</h3>
+        <p class='small'>Consumer · $10/share</p>
+        <p class='small'>Beverages and snacks.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('KO',-1)">-</button>
+          <div id='count_KO' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('KO',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_KO'>0.00</span></div>
       </div>
-      <div class="row">
-        <label for="section">Section</label>
-        <input id="section" name="section" placeholder="e.g., 001" style="background:#0b0e14;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px">
+    
+      <div class='card'>
+        <h3>TTU Utilities</h3>
+        <p class='small'>Utilities · $12/share</p>
+        <p class='small'>Campus utilities and energy.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('TTUR',-1)">-</button>
+          <div id='count_TTUR' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('TTUR',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_TTUR'>0.00</span></div>
       </div>
-      <div class="row">
-        <label for="user">Name</label>
-        <input id="user" name="user" placeholder="Your name" style="background:#0b0e14;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px">
+    
+      <div class='card'>
+        <h3>Raider Retail</h3>
+        <p class='small'>Retail · $9/share</p>
+        <p class='small'>Campus and local retail.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('REDR',-1)">-</button>
+          <div id='count_REDR' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('REDR',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_REDR'>0.00</span></div>
       </div>
-      <div class="row">
-        <button class="btn" type="submit">Submit Portfolio</button>
-        <span id="status" class="notice" aria-live="polite"></span>
+    
+      <div class='card'>
+        <h3>Raider Defense</h3>
+        <p class='small'>Industrial · $14/share</p>
+        <p class='small'>Security and aerospace.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('RAID',-1)">-</button>
+          <div id='count_RAID' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('RAID',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_RAID'>0.00</span></div>
       </div>
-      <iframe name="hidden_iframe" style="display:none"></iframe>
-    </form>
+    
+      <div class='card'>
+        <h3>Llano Health</h3>
+        <p class='small'>Healthcare · $11/share</p>
+        <p class='small'>Regional healthcare network.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('MESA',-1)">-</button>
+          <div id='count_MESA' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('MESA',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_MESA'>0.00</span></div>
+      </div>
+    
+      <div class='card'>
+        <h3>High Plains Logistics</h3>
+        <p class='small'>Logistics · $13/share</p>
+        <p class='small'>Distribution and transport.</p>
+        <div class='row'>
+          <button class='btn secondary' type='button' onclick="bump('TUND',-1)">-</button>
+          <div id='count_TUND' class='counter'>0</div>
+          <button class='btn' type='button' onclick="bump('TUND',+1)">+</button>
+        </div>
+        <div class='small'>Subtotal: $<span id='sub_TUND'>0.00</span></div>
+      </div>
+    
+    </div>
   </section>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>

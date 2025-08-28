@@ -1,12 +1,59 @@
-{
-  "term": "Fall",
-  "budget": 10000,
-  "symbols": [
-    "AAPL",
-    "MSFT",
-    "TSLA",
-    "NVDA",
-    "KO"
-  ],
-  "startCash": 10000
-}
+[
+  {
+    "month": "Aug",
+    "events": [
+      {
+        "stockId": "RAID",
+        "multiplier": 1.03
+      },
+      {
+        "stockId": "REDR",
+        "multiplier": 0.97
+      }
+    ]
+  },
+  {
+    "month": "Sep",
+    "events": [
+      {
+        "stockId": "MSFT",
+        "multiplier": 1.02
+      },
+      {
+        "stockId": "KO",
+        "multiplier": 1.01
+      }
+    ]
+  },
+  {
+    "month": "Oct",
+    "events": [
+      {
+        "stockId": "AAPL",
+        "multiplier": 1.05
+      },
+      {
+        "stockId": "TSLA",
+        "multiplier": 0.98
+      }
+    ]
+  },
+  {
+    "month": "Nov",
+    "events": [
+      {
+        "stockId": "NVDA",
+        "multiplier": 1.04
+      }
+    ]
+  },
+  {
+    "month": "Dec",
+    "events": [
+      {
+        "stockId": "TTUR",
+        "multiplier": 1.02
+      }
+    ]
+  }
+]

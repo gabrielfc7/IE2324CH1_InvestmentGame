@@ -4,6 +4,154 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard · IE 2324 Investment Game</title>
   <link rel="stylesheet" href="ttu-dark.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziZR_L6C2A-QNwLADPrtQS-cOT5SY-vA1ZWWz5bYfbkqQH8EivfcotMPm3lTuF_QP5/exec";
+    let PRICES = null, PRESETS = null;
+
+    async function init(){
+      const data = await (await fetch('stocks.json')).json();
+      PRICES = Object.fromEntries(Object.entries(data.stocks).map(([k,v])=>[k, v.price]));
+      PRESETS = {"FALL": await (await fetch('presets/fall.json')).json(), "SPRING": await (await fetch('presets/spring.json')).json()};
+      document.getElementById('semester').addEventListener('change', onFilter);
+      document.getElementById('section').addEventListener('change', onFilter);
+      document.getElementById('loadPreset').addEventListener('click', loadPreset);
+      document.getElementById('randomEvents').addEventListener('click', randomizeEvents);
+      buildEventChips('FALL');
+      onFilter();
+    }
+
+    function buildEventChips(which){
+      const container = document.getElementById('events'); container.innerHTML='';
+      const months = which==='FALL' ? ['Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mar','Apr','May'];
+      months.forEach(m=>{
+        const div = document.createElement('div'); div.className='card';
+        const chipsId = 'chips_'+m;
+        div.innerHTML = `<h3>${m}</h3><div id="${chipsId}" class="row"></div>`;
+        container.appendChild(div);
+      });
+    }
+
+    function addChip(month, stockId, mult){
+      const host = document.getElementById('chips_'+month);
+      const span = document.createElement('span');
+      span.className='badge';
+      span.textContent = stockId+' ×'+mult.toFixed(2);
+      span.dataset.stockId = stockId;
+      span.dataset.mult = mult.toFixed(2);
+      span.style.cursor='pointer';
+      span.title='Click to remove';
+      span.onclick = ()=>span.remove();
+      host.appendChild(span);
+    }
+
+    function eventsPayload(){
+      const months = document.getElementById('semester').value === 'FALL' ? ['Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mar','Apr','May'];
+      return months.map(m=>({
+        month:m,
+        events:Array.from(document.getElementById('chips_'+m).children).map(el=>({ stockId: el.dataset.stockId, multiplier: Number(el.dataset.mult) }))
+      }));
+    }
+
+    async function onFilter(){
+      const semester = document.getElementById('semester').value;
+      const section = document.getElementById('section').value;
+      await refreshKPIs(semester, section);
+      await refreshRecent(semester, section);
+      await refreshHoldings(semester, section);
+      await refreshSector(semester, section);
+      await refreshLeaderboard(semester, section);
+    }
+
+    async function refreshKPIs(semester, section){
+      const res = await fetch(SCRIPT_URL + '?mode=tally&semester='+semester+'&section='+section);
+      const data = await res.json();
+      document.getElementById('k_sub').textContent = data.count || 0;
+      // For demo: avg stocks per portfolio approximated from totals by dividing by average price
+      document.getElementById('k_total').textContent = '$' + (Object.values(data.totals||{}).reduce((a,b)=>a+b,0)).toFixed(2);
+      // fetch recent to calc unique + avg picks accurately
+      const r = await (await fetch(SCRIPT_URL + '?mode=submissions&semester='+semester+'&section='+section)).json();
+      const uniq = new Set((r.recent||[]).map(x=>x.uid));
+      document.getElementById('k_unique').textContent = uniq.size;
+      const avg = (r.recent||[]).length ? ((r.recent||[]).reduce((a,b)=>a+b.picks,0)/(r.recent||[]).length).toFixed(1) : '0.0';
+      document.getElementById('k_avg').textContent = avg;
+    }
+
+    async function refreshRecent(semester, section){
+      const r = await (await fetch(SCRIPT_URL + '?mode=submissions&semester='+semester+'&section='+section)).json();
+      const tb = document.getElementById('recentBody'); tb.innerHTML='';
+      (r.recent||[]).forEach(x=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(x.ts).toLocaleString()}</td><td>${x.name}</td><td>${x.uid.slice(0,6)}…</td><td>${x.picks}</td><td>$${Number(x.cash).toFixed(2)} </td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    async function refreshHoldings(semester, section){
+      const res = await fetch(SCRIPT_URL + '?mode=tally&semester='+semester+'&section='+section);
+      const data = await res.json();
+      const labels = Object.keys(PRICES);
+      const vals = labels.map(k=> data.totals && data.totals[k] ? data.totals[k] : 0);
+      const ctx = document.getElementById('holdings').getContext('2d');
+      if(window.holdingsChart) window.holdingsChart.destroy();
+      window.holdingsChart = new Chart(ctx, {
+        type:'bar',
+        data:{ labels:labels, datasets:[{ label:'Invested $', data: vals }] },
+        options:{ plugins:{ legend:{ labels:{ color:'#e7e9ee' } } }, scales:{ x:{ ticks:{ color:'#a8b0bf' }, grid:{ color:'#252a34' } }, y:{ title:{ display:true,text:'Invested $',color:'#a8b0bf' }, ticks:{ color:'#a8b0bf' }, grid:{ color:'#252a34' } } } }
+      });
+    }
+
+    async function refreshSector(semester, section){
+      const res = await fetch(SCRIPT_URL + '?mode=tally&semester='+semester+'&section='+section);
+      const data = await res.json();
+      const meta = await (await fetch('stocks.json')).json();
+      const bySector = {};
+      Object.entries(meta.stocks).forEach(([id,s])=>{ const v = data.totals && data.totals[id] ? data.totals[id] : 0; bySector[s.sector] = (bySector[s.sector]||0) + v; });
+      const total = Object.values(bySector).reduce((a,b)=>a+b,0) || 1;
+      const tbody = document.getElementById('sectorBody'); tbody.innerHTML='';
+      Object.entries(bySector).forEach(([k,v])=>{
+        const tr = document.createElement('tr'); const pct = (v*100/total).toFixed(1);
+        tr.innerHTML = `<td>${k}</td><td>$${v.toFixed(2)}</td><td>${pct}%</td>`; tbody.appendChild(tr);
+      });
+      const ctx = document.getElementById('sectorPie').getContext('2d');
+      if(window.pieChart) window.pieChart.destroy();
+      window.pieChart = new Chart(ctx, {
+        type:'pie',
+        data:{ labels:Object.keys(bySector), datasets:[{ data:Object.values(bySector) }] },
+        options:{ plugins:{ legend:{ labels:{ color:'#e7e9ee' } } } }
+      });
+    }
+
+    async function refreshLeaderboard(semester, section){
+      const tl = eventsPayload();
+      const res = await fetch(SCRIPT_URL + '?mode=leaderboard&semester='+semester+'&section='+section+'&prices='+encodeURIComponent(JSON.stringify(PRICES))+'&timeline='+encodeURIComponent(JSON.stringify(tl)));
+      const data = await res.json();
+      const tbody = document.getElementById('boardBody'); tbody.innerHTML='';
+      (data.top10||[]).forEach((r,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${r.name}</td><td>${r.uid.slice(0,6)}…</td><td>$${r.value.toFixed(2)}</td><td>${r.picks}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function loadPreset(){
+      const sem = document.getElementById('semester').value;
+      buildEventChips(sem);
+      (PR_PRESETS(sem) || []).forEach(m=> m.events.forEach(ev=> addChip(m.month, ev.stockId, Number(ev.multiplier||1))));
+      refreshLeaderboard(sem, document.getElementById('section').value);
+    }
+    function PR_PRESETS(sem){ return sem==='FALL' ? [{"month": "Aug", "events": [{"stockId": "RAID", "multiplier": 1.03}, {"stockId": "REDR", "multiplier": 0.97}]}, {"month": "Sep", "events": [{"stockId": "MSFT", "multiplier": 1.02}, {"stockId": "KO", "multiplier": 1.01}]}, {"month": "Oct", "events": [{"stockId": "AAPL", "multiplier": 1.05}, {"stockId": "TSLA", "multiplier": 0.98}]}, {"month": "Nov", "events": [{"stockId": "NVDA", "multiplier": 1.04}]}, {"month": "Dec", "events": [{"stockId": "TTUR", "multiplier": 1.02}]}] : [{"month": "Jan", "events": [{"stockId": "TUND", "multiplier": 1.03}]}, {"month": "Feb", "events": [{"stockId": "MESA", "multiplier": 1.02}]}, {"month": "Mar", "events": [{"stockId": "REDR", "multiplier": 1.01}]}, {"month": "Apr", "events": [{"stockId": "AAPL", "multiplier": 1.03}, {"stockId": "NVDA", "multiplier": 1.02}]}, {"month": "May", "events": [{"stockId": "TSLA", "multiplier": 1.02}]}]; }
+
+    function randomizeEvents(){
+      const sem = document.getElementById('semester').value;
+      buildEventChips(sem);
+      const months = sem==='FALL' ? ['Aug','Sep','Oct','Nov','Dec'] : ['Jan','Feb','Mar','Apr','May'];
+      const ids = Object.keys(PRICES);
+      months.forEach(m=>{ for(let i=0;i<3;i++){ const pick = ids[Math.floor(Math.random()*ids.length)]; const mul = (0.97 + Math.random()*0.08); addChip(m, pick, Number(mul.toFixed(2))); } });
+      refreshLeaderboard(sem, document.getElementById('section').value);
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
 </head>
 <body>
 
@@ -15,20 +163,71 @@
       <a href="invest-portfolio.html" class="">Portfolio</a>
       <a href="stocks.html" class="">Stocks</a>
       <a href="dashboard-portfolio.html" class="active">Dashboard</a>
+      <a href="qr.html" class="">QR Screen</a>
     </nav>
   </div>
 </header>
 <main>
   <section class="card">
-    <h2>Portfolio Dashboard</h2>
-    <p class="notice">This page can later pull aggregated results from your spreadsheet. For now, it confirms the new polished UI across the app.</p>
-    <ul>
-      <li>Dark theme with TTU accent, single clean nav.</li>
-      <li>Whole-share purchase only, no text entry.</li>
-      <li>Hidden-iframe form post to avoid CORS errors.</li>
-      <li>Charts with axis labels, legend, and dark styling.</li>
-    </ul>
+    <div class="row">
+      <label>Semester</label>
+      <select id="semester"><option>FALL</option><option>SPRING</option></select>
+      <label>Section</label>
+      <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+      <button id="loadPreset" class="btn secondary">Load Preset</button>
+      <button id="randomEvents" class="btn">Random Events</button>
+    </div>
   </section>
+
+  <div class="grid">
+    <section class="card kpi"><h2>Portfolios Submitted</h2><div id="k_sub" class="value">0</div></section>
+    <section class="card kpi"><h2>Unique Students</h2><div id="k_unique" class="value">0</div></section>
+    <section class="card kpi"><h2>Avg Stocks/Portfolio</h2><div id="k_avg" class="value">0.0</div></section>
+    <section class="card kpi"><h2>Total $ Allocated</h2><div id="k_total" class="value">$0.00</div></section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Recent Submissions</h2>
+      <table class="table">
+        <thead><tr><th>Time</th><th>Name</th><th>UID</th><th>Picks</th><th>Cash Left</th></tr></thead>
+        <tbody id="recentBody"></tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Holdings by Stock</h2>
+      <div class="chart-wrap"><canvas id="holdings" height="130"></canvas></div>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Portfolio Mix by Sector</h2>
+      <table class="table">
+        <thead><tr><th>Sector</th><th>Invested $</th><th>% Share</th></tr></thead>
+        <tbody id="sectorBody"></tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Sector Composition</h2>
+      <div class="chart-wrap"><canvas id="sectorPie" height="130"></canvas></div>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Top 10 Leaderboard</h2>
+      <table class="table">
+        <thead><tr><th>#</th><th>Name</th><th>UID</th><th>Final Value</th><th>Picks</th></tr></thead>
+        <tbody id="boardBody"></tbody>
+      </table>
+    </section>
+    <section class="card" id="eventsPanel">
+      <h2>Timeline Events</h2>
+      <p class="small">Click a chip to remove it. Use Load Preset or Random Events to add monthly multipliers.</p>
+      <div id="events" class="grid"></div>
+    </section>
+  </div>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
 </body></html>

@@ -1,11 +1,51 @@
-{
-  "term": "Spring",
-  "budget": 8000,
-  "symbols": [
-    "AAPL",
-    "TSLA",
-    "NVDA",
-    "KO"
-  ],
-  "startCash": 8000
-}
+[
+  {
+    "month": "Jan",
+    "events": [
+      {
+        "stockId": "TUND",
+        "multiplier": 1.03
+      }
+    ]
+  },
+  {
+    "month": "Feb",
+    "events": [
+      {
+        "stockId": "MESA",
+        "multiplier": 1.02
+      }
+    ]
+  },
+  {
+    "month": "Mar",
+    "events": [
+      {
+        "stockId": "REDR",
+        "multiplier": 1.01
+      }
+    ]
+  },
+  {
+    "month": "Apr",
+    "events": [
+      {
+        "stockId": "AAPL",
+        "multiplier": 1.03
+      },
+      {
+        "stockId": "NVDA",
+        "multiplier": 1.02
+      }
+    ]
+  },
+  {
+    "month": "May",
+    "events": [
+      {
+        "stockId": "TSLA",
+        "multiplier": 1.02
+      }
+    ]
+  }
+]

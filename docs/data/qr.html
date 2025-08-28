@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR Screen · IE 2324 Investment Game</title>
+  <link rel="stylesheet" href="ttu-dark.css">
+  <style>
+    main{max-width:900px;text-align:center}
+    .big{font-size:1.25rem}
+  </style>
+  <script>
+    function update(){
+      const sem = document.getElementById('sem').value;
+      const sec = document.getElementById('sec').value;
+      const link = 'invest-portfolio.html?semester='+sem+'&section='+sec;
+      document.getElementById('qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=0&data='+encodeURIComponent(link);
+      document.getElementById('deep').textContent = link; document.getElementById('deep').href = link;
+    }
+    window.addEventListener('DOMContentLoaded', update);
+  </script>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand"><span class="dot"></span><h1>IE 2324 · Investment Game</h1></div>
+    <nav>
+      <a href="home.html" class="">Home</a>
+      <a href="invest-portfolio.html" class="">Portfolio</a>
+      <a href="stocks.html" class="">Stocks</a>
+      <a href="dashboard-portfolio.html" class="">Dashboard</a>
+      <a href="qr.html" class="active">QR Screen</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <h2>Big QR</h2>
+  <p class="big">Select Semester and Section, then project this screen in class.</p>
+  <div class="row"><label>Semester</label><select id="sem" onchange="update()"><option>FALL</option><option>SPRING</option></select>
+  <label>Section</label><select id="sec" onchange="update()"><option>001</option><option>002</option><option>003</option><option>D01</option></select></div>
+  <div class="qr"><img id="qr" width="320" height="320" alt="QR"></div>
+  <p class="small">Deep link: <a id="deep" href="#" target="_blank"></a></p>
+</main>
+<footer>© 2025 IE 2324 · TTU</footer>
+</body></html>

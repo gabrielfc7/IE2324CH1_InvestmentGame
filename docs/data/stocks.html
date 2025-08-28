@@ -6,34 +6,54 @@
   <link rel="stylesheet" href="ttu-dark.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    let HIST = null, DATA = null;
     async function init(){
-      const res = await fetch('stocks.json'); 
-      const data = await res.json();
+      DATA = await (await fetch('stocks.json')).json();
+      HIST = await (await fetch('historical.json')).json();
+      renderCards();
+      drawChart('2024-Fall','AAPL');
+      updateQR();
+      document.getElementById('semSel').addEventListener('change', updateQR);
+      document.getElementById('secSel').addEventListener('change', updateQR);
+      document.getElementById('stockSel').addEventListener('change', e=>drawChart(document.getElementById('histSel').value, e.target.value));
+      document.getElementById('histSel').addEventListener('change', e=>drawChart(e.target.value, document.getElementById('stockSel').value));
+    }
+    function updateQR(){
+      const sem = document.getElementById('semSel').value;
+      const sec = document.getElementById('secSel').value;
+      const link = 'invest-portfolio.html?semester='+sem+'&section='+sec;
+      const img = document.getElementById('qrimg');
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data='+encodeURIComponent(link);
+      document.getElementById('deepLink').href = link;
+      document.getElementById('deepLink').textContent = link;
+    }
+    function renderCards(){
+      const wrap = document.getElementById('cards');
+      wrap.innerHTML = '';
+      Object.entries(DATA.stocks).forEach(([id,s])=>{
+        const div = document.createElement('div');
+        div.className='card';
+        div.innerHTML = `<h3>${s.name}</h3>
+          <p class="small">${s.sector} · $${s.price}/share</p>
+          <p class="small">${s.desc}</p>`;
+        wrap.appendChild(div);
+      });
+      const sel = document.getElementById('stockSel');
+      sel.innerHTML = Object.keys(DATA.stocks).map(id=>`<option value="${id}">${id} – ${DATA.stocks[id].name}</option>`).join('');
+      document.getElementById('histSel').innerHTML = Object.keys(HIST).map(k=>`<option>${k}</option>`).join('');
+    }
+    let chart;
+    function drawChart(key, id){
+      const cfg = HIST[key];
+      const series = cfg.series[id];
       const ctx = document.getElementById('stockChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: data.labels,
-          datasets: Object.entries(data.prices).map(([name,series]) => ({ label: name, data: series, borderWidth: 2, fill: false, tension: .2 }))
-        },
-        options: {
-          responsive:true,
-          plugins: {
-            legend: { labels: { color: '#e7e9ee' } },
-            title: { display:true, text:'Stock Prices', color:'#e7e9ee' }
-          },
-          scales: {
-            x: {
-              title: { display:true, text:'Time (months)', color:'#a8b0bf' },
-              ticks: { color:'#a8b0bf' },
-              grid: { color:'#252a34' }
-            },
-            y: {
-              title: { display:true, text:'Price ($)', color:'#a8b0bf' },
-              ticks: { color:'#a8b0bf' },
-              grid: { color:'#252a34' }
-            }
-          }
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type:'line',
+        data:{ labels: cfg.labels, datasets:[{ label: id, data: series, borderWidth:2, fill:false, tension:.2 }] },
+        options:{
+          plugins:{ legend:{ labels:{ color:'#e7e9ee' } }, title:{ display:true, text:'Historical Price: '+id, color:'#e7e9ee' } },
+          scales:{ x:{ title:{ display:true,text:'Month',color:'#a8b0bf' }, ticks:{ color:'#a8b0bf' }, grid:{ color:'#252a34' } }, y:{ title:{ display:true,text:'Price $',color:'#a8b0bf' }, ticks:{ color:'#a8b0bf' }, grid:{ color:'#252a34' } } }
         }
       });
     }
@@ -50,20 +70,37 @@
       <a href="invest-portfolio.html" class="">Portfolio</a>
       <a href="stocks.html" class="active">Stocks</a>
       <a href="dashboard-portfolio.html" class="">Dashboard</a>
+      <a href="qr.html" class="">QR Screen</a>
     </nav>
   </div>
 </header>
 <main>
   <section class="card">
-    <h2>Performance Charts</h2>
-    <div class="chart-wrap"><canvas id="stockChart" height="150"></canvas></div>
-    <p class="small">Axes labeled with units for clarity; toggle series via legend.</p>
+    <h2>QR: Join the Game</h2>
+    <div class="row">
+      <label>Semester</label>
+      <select id="semSel"><option>FALL</option><option>SPRING</option></select>
+      <label>Section</label>
+      <select id="secSel"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+    </div>
+    <div class="qr"><img id="qrimg" width="200" height="200" alt="QR to invest page"></div>
+    <p class="small">Deep link: <a id="deepLink" href="#" target="_blank"></a></p>
   </section>
+
   <section class="card">
-    <h2>Submit via QR</h2>
-    <p>Scan to open the portfolio submission endpoint on your phone.</p>
-    <div class="qr"><img alt="QR code to Apps Script" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk%2Fexec" width="200" height="200"></div>
-    <p class="small"><a href="https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec" target="_blank">Open submission URL</a></p>
+    <h2>Stocks</h2>
+    <div id="cards" class="grid"></div>
+  </section>
+
+  <section class="card">
+    <h2>Historical Chart</h2>
+    <div class="row">
+      <label>Semester</label>
+      <select id="histSel"></select>
+      <label>Stock</label>
+      <select id="stockSel"></select>
+    </div>
+    <div class="chart-wrap"><canvas id="stockChart" height="140"></canvas></div>
   </section>
 </main>
 <footer>© 2025 IE 2324 · TTU</footer>
