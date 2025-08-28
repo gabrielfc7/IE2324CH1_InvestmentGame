@@ -6,6 +6,7 @@
   <title>Stocks — IE2324</title>
   <link rel="stylesheet" href="./ttu-dark.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 <body>
   <header class="header">
@@ -15,23 +16,45 @@
     </div>
   </header>
   <main class="container grid two" id="list"></main>
+
   <script>
     Promise.all([
       fetch('./stocks.json').then(r=>r.json()),
       fetch('./data/historical.json').then(r=>r.json())
     ]).then(([stocks,hist])=>{
       const root=document.getElementById('list');
+      Chart.register(ChartDataLabels);
+
       stocks.forEach(s=>{
         const el=document.createElement('section'); el.className='card';
-        el.innerHTML = `<h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)} / share</span></h2><p>${s.desc||''}</p><canvas class='spark' id='sp_${s.id}'></canvas>`;
+        el.innerHTML = `
+          <h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)} / share</span></h2>
+          <p>${s.desc||''}</p>
+          <div style="height:90px"><canvas class="spark" id="sp_${s.id}"></canvas></div>`;
         root.appendChild(el);
+
         const ctx=document.getElementById('sp_'+s.id).getContext('2d');
         const series=hist[s.id]||{}; 
-        const keys=Object.keys(series).slice(-2);
-        new Chart(ctx,{type:'line',
-          data:{labels:keys.length?['M1','M2','M3','M4','M5']:[],
-          datasets:keys.map(k=>({label:k,data:series[k],fill:false,pointRadius:0,borderWidth:2}))},
-          options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}},elements:{line:{tension:.3}},responsive:true,animation:false}
+        const keys=Object.keys(series).slice(-2); // last two semesters
+        const datasets = keys.map(k=>({label:k, data:series[k], fill:false, pointRadius:0, borderWidth:2}));
+
+        new Chart(ctx,{
+          type:'line',
+          data:{labels:keys.length?['M1','M2','M3','M4','M5']:[], datasets},
+          options:{
+            responsive:true, maintainAspectRatio:false, animation:false,
+            plugins:{
+              legend:{display:false},
+              datalabels:{
+                align:'top', clamp:true, clip:false,
+                formatter:(v,ctx)=> ctx.dataIndex===ctx.dataset.data.length-1 ? v.toFixed(1) : '',
+                font:{size:10}, offset:2
+              },
+              tooltip:{enabled:true}
+            },
+            scales:{x:{display:false},y:{display:false}},
+            elements:{line:{tension:.3}}
+          }
         });
       });
     });

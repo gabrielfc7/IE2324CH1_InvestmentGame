@@ -77,12 +77,13 @@ input[type=number]{width:110px}
 .event-chip.active{outline:2px solid var(--brand); background:#1a0f14}
 .event-list{display:flex;flex-wrap:wrap;gap:8px}
 
-/* dashboard layout (no scroll on 1366×768) */
+/* ---------- Dashboard layout (no scroll on 1366×768) ---------- */
 @media (min-width: 1100px){
-  .no-scroll{height:calc(100vh - 120px); display:grid; grid-template-rows:auto 1fr}
+  .no-scroll{height:calc(100vh - 120px); display:grid; grid-template-rows:auto 1fr; gap:16px}
+  .grid.dash{grid-template-columns:2fr 1.05fr; gap:16px; min-height:0}
   .dash-main{display:grid; grid-template-rows:1fr 1fr; gap:16px; min-height:0}
   .panel{min-height:0; display:flex; flex-direction:column}
-  .panel canvas{flex:1}
+  .panel canvas{flex:1; height:auto !important}
   .sidebar{display:grid; grid-template-rows:1fr 1fr; gap:16px; min-height:0}
   .scroll{overflow:auto}
 }

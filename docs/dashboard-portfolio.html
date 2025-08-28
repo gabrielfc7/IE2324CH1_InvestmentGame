@@ -63,15 +63,14 @@
 </main>
 
 <script>
-const SCRIPT_URL='PASTE_YOUR_WEB_APP_URL_HERE';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
 
 let stocks=[], prices={};
 const FALL_MONTHS=['Aug','Sep','Oct','Nov','Dec'];
 const SPRING_MONTHS=['Jan','Feb','Mar','Apr','May'];
 let months = FALL_MONTHS;
 
-// ------------- Event Library (hidden multipliers) ---------------
-// Each event has per-stock multipliers (only list stocks it affects).
+// Event library (hidden multipliers)
 const EVENTS = [
   { id:'WELCOME', name:'Welcome Week surge', factors:{ SNACK:1.10, MEDIA:1.15, COFFEE:1.05 }},
   { id:'RAINOUT', name:'Rainout', factors:{ SNACK:0.70, TSHIRT:0.80, VRBOOTH:0.85 }},
@@ -85,17 +84,17 @@ const EVENTS = [
   { id:'LICENSE', name:'Licensing fee increase', factors:{ TSHIRT:0.85 }}
 ];
 
-// state: selected events per month (array of arrays of event ids)
-let timelineSelections = []; // [[eventId,eventId], ...]
+let timelineSelections = []; // array per month of event ids
 let activeMonthIndex = 0;
 
-// fetch stocks then boot
+function monthsForSemester(sem){ return sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS; }
+function semester(){ return document.getElementById('semester').value.toUpperCase(); }
+function section(){ return document.getElementById('section').value.toUpperCase(); }
+
 fetch('./stocks.json').then(r=>r.json()).then(list=>{
   stocks=list; prices=Object.fromEntries(stocks.map(s=>[s.id, s.price]));
   init();
 });
-
-function monthsForSemester(sem){ return sem==='SPRING'? SPRING_MONTHS : FALL_MONTHS; }
 
 function init(){
   setupControls();
@@ -111,9 +110,7 @@ function setupControls(){
   document.getElementById('loadPreset').onclick = async ()=>{
     const url = semester()==='SPRING'? './data/presets/spring.json' : './data/presets/fall.json';
     const preset = await fetch(url).then(r=>r.json());
-    // convert numeric preset to event selections by greedy match (best-effort)
     resetTimeline();
-    // Simple mapping to similar events
     const map = { 'Aug':'WELCOME', 'Sep':'RAINOUT', 'Oct':'MIDTERMS', 'Nov':'SOLDOUT', 'Dec':'FINALS',
                   'Jan':'WELCOME', 'Feb':'DUST', 'Mar':'MIDTERMS', 'Apr':'SOLDOUT', 'May':'FINALS' };
     preset.forEach((m,i)=>{ const e = map[m.month]; if(e){ timelineSelections[i] = [e]; }});
@@ -122,16 +119,12 @@ function setupControls(){
   document.getElementById('randomTimeline').onclick = ()=>{
     resetTimeline();
     timelineSelections = timelineSelections.map(()=> {
-      // 1–2 random events per month
       const pool = [...EVENTS].sort(()=>Math.random()-0.5).slice(0, Math.random()>0.5?2:1);
       return pool.map(p=>p.id);
     });
     buildEventChips(); refreshAll();
   };
 }
-
-function semester(){ return document.getElementById('semester').value.toUpperCase(); }
-function section(){ return document.getElementById('section').value.toUpperCase(); }
 
 function resetTimeline(){
   months = monthsForSemester(semester());
@@ -167,7 +160,6 @@ function buildEventChips(){
   });
 }
 
-// derive numeric timeline (multipliers) from event selections
 function numericTimeline(){
   return months.map((month, i)=>{
     const picks = timelineSelections[i] || [];
@@ -183,14 +175,22 @@ function numericTimeline(){
   });
 }
 
-const holdingsChart = new Chart(document.getElementById('holdingsChart').getContext('2d'),{
-  type:'bar', data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]},
-  options:{responsive:true,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+const holdingsChart = new Chart(
+  document.getElementById('holdingsChart').getContext('2d'),
+  {type:'bar',
+   data:{labels:[], datasets:[{label:'Total $ Invested', data:[]}]},
+   options:{responsive:true, maintainAspectRatio:false, animation:false,
+     plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
 });
-const priceChart = new Chart(document.getElementById('priceChart').getContext('2d'),{
-  type:'line', data:{labels:[],datasets:[]},
-  options:{responsive:true,animation:false,plugins:{legend:{display:false}}}
-});
+const priceChart = new Chart(
+  document.getElementById('priceChart').getContext('2d'),
+  {type:'line',
+   data:{labels:[],datasets:[]},
+   options:{responsive:true, maintainAspectRatio:false, animation:false,
+     plugins:{legend:{display:false}}}
+   }
+);
+window.addEventListener('resize', ()=>{ holdingsChart.resize(); priceChart.resize(); });
 
 async function refreshAll(){
   await refreshHoldings();

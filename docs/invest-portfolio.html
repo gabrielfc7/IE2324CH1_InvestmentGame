@@ -7,18 +7,28 @@
   <link rel="stylesheet" href="./ttu-dark.css"/>
 </head>
 <body>
-<header class="header"><div class="container navbar"><a class="btn back" href="./home.html">← Back</a><h1 style="margin:0">Invest Your $100</h1></div></header>
+<header class="header">
+  <div class="container navbar">
+    <a class="btn back" href="./home.html">← Back</a>
+    <h1 style="margin:0">Invest Your $100</h1>
+  </div>
+</header>
+
 <main class="container">
   <section class="card">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="controls">
+      <label class="label" for="name">Name</label>
+      <input id="name" placeholder="First Last" required />
       <label class="label" for="section">Section</label>
-      <select id="section" style="padding:8px;border:1px solid #333;border-radius:10px"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
+      <select id="section"><option>001</option><option>002</option><option>003</option><option>D01</option></select>
       <label class="label" for="semester">Semester</label>
-      <select id="semester" style="padding:8px;border:1px solid #333;border-radius:10px"><option>FALL</option><option>SPRING</option></select>
+      <select id="semester"><option>FALL</option><option>SPRING</option></select>
       <a class="btn" href="./stocks.html" target="_blank">View Stock Info</a>
     </div>
+
     <div id="budget" class="notice">Budget remaining: $100.00 • Picks: 0/5</div>
     <div id="stocks" class="grid two"></div>
+
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
       <button id="submit" class="btn primary" disabled>Submit Portfolio</button>
       <a class="btn" href="./dashboard-portfolio.html">Open Dashboard</a>
@@ -26,11 +36,11 @@
     <p id="msg" class="footer"></p>
   </section>
 </main>
+
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZbR2iFcuCP76p1fDt0ew3wMqhGRF1c_0_Q64soIUY_c4qazR3FIegSzwsfLW73bdk/exec';
 const BUDGET = 100;
 const uid = localStorage.getItem('ie2324_uid') || (function(){const v='uid_'+Math.random().toString(36).slice(2); localStorage.setItem('ie2324_uid',v); return v;})();
-
 const q = new URL(location.href).searchParams; ['section','semester'].forEach(k=>{ const v=q.get(k); if(v) setTimeout(()=>{ document.getElementById(k).value=v.toUpperCase(); },0); });
 
 let stocks=[]; let prices={};
@@ -42,8 +52,8 @@ function renderStocks(){
     const el=document.createElement('div'); el.className='card';
     el.innerHTML=`<h2>${s.name} <span class="muted">$${Number(s.price).toFixed(2)}/share</span></h2>
     <p>${s.desc||''}</p>
-    <label class='label'>Shares</label>
-    <input type='number' min='0' step='1' value='0' data-id='${s.id}' style='width:120px;padding:8px;border:1px solid #333;border-radius:10px'>`;
+    <label class='label'>Amount ($)</label>
+    <input type='number' min='0' step='1' value='0' data-id='${s.id}' style='width:140px'>`;
     el.querySelector('input').addEventListener('input', updateBudget);
     root.appendChild(el);
   });
@@ -51,26 +61,40 @@ function renderStocks(){
 
 function updateBudget(){
   const inputs=[...document.querySelectorAll('input[data-id]')];
-  let spent=0; let picks=0; inputs.forEach(inp=>{ const id=inp.dataset.id; const sh=Number(inp.value||0); if(sh>0){ picks++; spent+=sh*prices[id]; }});
+  let spent=0; let picks=0;
+  inputs.forEach(inp=>{ const amt=Number(inp.value||0); if(amt>0){ picks++; spent+=amt; }});
   const remain = BUDGET - spent; const over = remain< -1e-6; const tooMany = picks>5;
   const b = document.getElementById('budget');
-  b.textContent = `Budget remaining: $${remain.toFixed(2)} • Picks: ${picks}/5`;
+  b.textContent = `Budget remaining: $${Math.max(0,remain).toFixed(2)} • Picks: ${picks}/5`;
   b.style.borderColor = (over||tooMany)?'#ff3b30':'#23262d';
-  document.getElementById('submit').disabled = over || tooMany || picks===0;
+  document.getElementById('submit').disabled = over || tooMany || picks===0 || !document.getElementById('name').value.trim();
 }
+document.getElementById('name').addEventListener('input', updateBudget);
 
 document.getElementById('submit').onclick = async ()=>{
+  const name = document.getElementById('name').value.trim();
+  if(!name){ alert('Please enter your name.'); return; }
   const section = document.getElementById('section').value.toUpperCase();
   const semester = document.getElementById('semester').value.toUpperCase();
   const inputs=[...document.querySelectorAll('input[data-id]')];
-  let spent=0; let allocations=[]; inputs.forEach(inp=>{ const id=inp.dataset.id; const sh=Number(inp.value||0); if(sh>0){ spent+=sh*prices[id]; allocations.push({stockId:id, shares:sh, price:prices[id]}); }});
+  let spent=0; let allocations=[];
+  inputs.forEach(inp=>{
+    const id=inp.dataset.id; const amt=Number(inp.value||0);
+    if(amt>0){
+      spent+=amt;
+      const price = prices[id];
+      const shares = +(amt / price).toFixed(6);
+      allocations.push({stockId:id, amount:amt, price, shares});
+    }
+  });
   if(allocations.length>5){ alert('Choose at most 5 stocks.'); return; }
-  if(spent> BUDGET + 1e-6){ alert('Over budget. Reduce shares.'); return; }
+  if(spent> BUDGET + 1e-6){ alert('Over budget. Reduce amounts.'); return; }
   const cash = Math.max(0, BUDGET - spent);
   try{
-    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ semester, section, uid, allocations, cash })});
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ semester, section, name, uid, allocations, cash })});
     const j = await res.json();
-    document.getElementById('msg').textContent = j.ok? 'Portfolio submitted! Open the Dashboard to see progress.' : 'Error: '+j.error;
+    document.getElementById('msg').textContent = j.ok? 'Submitted! You can close this tab.' : 'Error: '+j.error;
   }catch(e){ document.getElementById('msg').textContent = 'Network error. Try again.'; }
 };
 </script>
