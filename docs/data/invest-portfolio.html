@@ -35,7 +35,20 @@
       document.getElementById('sub_'+id).textContent = sub.toFixed(2);
       recalc();
     }
-    function bump(id, d){ setCount(id, (state.shares[id]||0) + d); }
+    function bump(id, d){
+      const t=document.getElementById('toast');
+      const current = state.shares[id]||0;
+      if(d>0){
+        // Budget guard
+        const price = (STOCKS[id].price||0);
+        let spent = 0; let picks=0;
+        ORDER.forEach(k=>{ const v=state.shares[k]||0; if(v>0) picks++; spent += v*(STOCKS[k].price||0); });
+        const addingNewPick = current===0 ? 1 : 0;
+        if (picks + addingNewPick > 5) { t.textContent='Max 5 stocks.'; t.className='toast err show'; setTimeout(()=>t.classList.remove('show'), 1800); return; }
+        if (spent + price > 100) { t.textContent='Over $100 budget.'; t.className='toast err show'; setTimeout(()=>t.classList.remove('show'), 1800); return; }
+      }
+      setCount(id, current + d);
+    }
 
     function recalc(){
       let spent = 0; let picks = 0;

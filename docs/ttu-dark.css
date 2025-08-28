@@ -16,7 +16,7 @@ nav{display:flex;gap:14px;flex-wrap:wrap}
 nav a{padding:8px 12px;border-radius:10px;border:1px solid transparent}
 nav a.active, nav a:hover{background:var(--card);border-color:var(--border)}
 main{max-width:1400px;margin:0 auto;padding:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
 .card h2{margin-top:0}
 section h2{margin:8px 0 6px 0}
@@ -39,3 +39,8 @@ input,select{background:#0b0e14;border:1px solid var(--border);color:var(--text)
 .success{color:var(--good)} .error{color:var(--bad)}
 .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
 .qr{display:flex;justify-content:center;align-items:center;padding:12px}
+
+/* Dashboard grid refinements */
+.grid-dash{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));column-gap:32px;row-gap:28px}
+@media (max-width: 1100px){ .grid-dash{grid-template-columns:1fr} }
+.card.tight{padding:16px}
